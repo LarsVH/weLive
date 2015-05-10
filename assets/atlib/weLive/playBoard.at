@@ -1,21 +1,23 @@
-def playBoard := object: {
-	def board := [];
+object:{
+	def playBoard := object: {
+		def board := [];
 		
-	def init(rows, cols) {
-		def rowit := rows;
-		def colit;
-		while: {rowit > 0} do: {
-			board := board + [[]];
-			
-			colit := cols;			
-			while: {colit > 0} do: {
-				def currcol := rows - rowit + 1;
-				board.atPut(currcol, board.at(currcol) + [-1]);
-				colit := colit - 1;
-			};			
-			rowit := rowit-1;			
+		def init(rows, cols) {
+			def rowit := rows;
+			def colit;
+			while: {rowit > 0} do: {
+				board := board + [[]];
+				
+				colit := cols;
+				while: {colit > 0} do: {
+					def currcol := rows - rowit + 1;
+					board.atPut(currcol, board.at(currcol) + [-1]);
+					colit := colit - 1;
+				};
+				rowit := rowit-1;
+			};
+			board;
 		};
-		board;
+	
 	};
-
 };

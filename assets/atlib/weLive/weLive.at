@@ -10,10 +10,11 @@ def cols := 4;
 deftype Player;
 deftype Board;
 
-def makeWeLive(ID := /.at.support.util.randomNumberBetween(0, 125)){
+def makeWeLive(){
 	object:{		
+		def Id := /.at.support.util.randomNumberBetween(0, 125);
 		def players := jlobby.java.util.HashMap.new();
-		def playboard := playBoard.new(rows, cols);		
+		def board := playBoard.new(rows, cols);		
 		
 		def local := weLiveLocalInterface.new(self);
 		def remote := weLiveRemoteInterface.new(self);
@@ -22,15 +23,16 @@ def makeWeLive(ID := /.at.support.util.randomNumberBetween(0, 125)){
 		def goOnline() {
 			export: remote as: Player;		
 			whenever: Player discovered: {|plyr|
-				when: plyr<-getId()@FutureMessage becomes: { |id|			
-					playes.put(id, plyr);
-					system.println("Newplayer Discovered -- " + id);
+				when: plyr<-getId()@FutureMessage becomes: { |remoteid|			
+					players.put(remoteid, plyr);
+					system.println("Newplayer Discovered -- " + remoteid);
 				};
 			};
 		};
 		goOnline();
 	};
 };
-system.println("weLive started");
+
 network.online();
-self;
+def weLiveCore := makeWeLive();
+system.println("weLive started, myId:" + weLiveCore.Id);
