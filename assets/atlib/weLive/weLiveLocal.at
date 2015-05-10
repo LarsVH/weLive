@@ -1,0 +1,12 @@
+object:{
+	def weLiveLocalInterface := object: {
+		def parent;
+		def init(prnt) {
+			parent := prnt;
+		};
+		
+		def setId(newId) {
+			parent.Id := newId;
+		};
+	};
+};

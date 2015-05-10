@@ -1,0 +1,36 @@
+import ~.weLiveLocal;
+import ~.weLiveRemote;
+import ~.playBoard;
+import /.at.lang.futures;
+
+//DIRTY CONSTANTS
+def rows := 6;
+def cols := 4;
+
+deftype Player;
+deftype Board;
+
+def makeWeLive(ID := /.at.support.util.randomNumberBetween(0, 125)){
+	object:{		
+		def players := jlobby.java.util.HashMap.new();
+		def playboard := playBoard.new(rows, cols);		
+		
+		def local := weLiveLocalInterface.new(self);
+		def remote := weLiveRemoteInterface.new(self);
+		
+		// Export/discover peers
+		def goOnline() {
+			export: remote as: Player;		
+			whenever: Player discovered: {|plyr|
+				when: plyr<-getId()@FutureMessage becomes: { |id|			
+					playes.put(id, plyr);
+					system.println("Newplayer Discovered -- " + id);
+				};
+			};
+		};
+		goOnline();
+	};
+};
+system.println("weLive started");
+network.online();
+self;

@@ -1,0 +1,12 @@
+object:{
+	def weLiveRemoteInterface := object: {
+		
+		def parent;
+		def init(prnt) {
+			parent := prnt;
+		};
+		def getId(){
+			parent.Id;
+		};
+	};
+};
