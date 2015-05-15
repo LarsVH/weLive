@@ -1,3 +1,4 @@
+import ~.iterMap;
 import ~.weLiveLocal;
 import ~.weLiveRemote;
 import ~.playBoard;
@@ -12,23 +13,52 @@ deftype Board;
 
 def makeWeLive(){
 	object:{		
+		// Id of this player
 		def Id := /.at.support.util.randomNumberBetween(0, 125);
-		def players := jlobby.java.util.HashMap.new();
+		
+		// All players discovered so far
+		def players := iterMap.new();	
+		// Players currently online and playing
+		def onlinePlayers := iterMap.new();		
+		// New/Reconnected Playres waiting to join
+		def joinPlayers := iterMap.new();
+		
+		// Local playBoard
 		def board := playBoard.new(rows, cols);		
 		
+		// Local and remote interfaces
 		def local := weLiveLocalInterface.new(self);
 		def remote := weLiveRemoteInterface.new(self);
+		
+		// session
+		def sessionId := -1; // to be initialized
 		
 		// Export/discover peers
 		def goOnline() {
 			export: remote as: Player;		
 			whenever: Player discovered: {|plyr|
-				when: plyr<-getId()@FutureMessage becomes: { |remoteid|			
+				def remoteId;
+				def remoteSessionId;		
+				when: plyr<-getId()@FutureMessage becomes: { |remoteid|
+					remoteId := remoteid;			
 					players.put(remoteid, plyr);
 					system.println("Newplayer Discovered -- " + remoteid);
+				
+					when: plyr<-getSessionId()@FutureMessage becomes: { |remotesessionid|
+						remoteSessionId := remotesessionid;						
+						
+						if: (remoteSessionId != -1) then: {	//
+							
+						}
+						else: {
+						};
+					};
 				};
+				
 			};
 		};
+		
+		
 		goOnline();
 	};
 };
