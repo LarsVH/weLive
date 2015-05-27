@@ -8,11 +8,16 @@ object:{
 		def get(key) {
 			hashMap.get(key);
 		};
-	
+		
 		def put(key,value){
-			hashMap.put(key,value);
-			table := table + [value];
-			value;
+			if: (hashMap.get(key) == nil) then:{
+				hashMap.put(key,value);
+				table := table + [value];
+				value;
+			}
+			else: {// Key is already in iterMap, ignore
+				false;
+			};
 		};
 		
 		def remove(key){
@@ -24,5 +29,27 @@ object:{
 		def getValueTable(){
 			table;
 		};
+		
+		def map(clojure) {
+			table.map: clojure;
+		};
+		def at(idx) {
+			table.at(idx);
+		};
+		def getKeys(){// Returns an AT table of all keys
+			def iter := hashMap.keySet().iterator();
+			def res := [];
+			while: {iter.hasNext()} do: {
+				res := res + [iter.next()];
+			};
+			res;
+		};
+		def test(){
+			def a := self.new();
+			a.put(1, "a");
+			a.put(2, "b");
+			a.put(63, "c");
+			a;
+		};
 	};
-}
+};
