@@ -5,6 +5,10 @@ object:{
 		def hashMap := jlobby.java.util.HashMap.new();
 		def table := [];
 		
+		def length() {
+			table.length();
+		};
+		
 		def get(key) {
 			hashMap.get(key);
 		};
@@ -23,6 +27,6 @@ object:{
 		
 		def getValueTable(){
 			table;
-		};
+		};		
 	};
 }

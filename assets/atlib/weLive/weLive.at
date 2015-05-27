@@ -3,28 +3,34 @@ import ~.weLiveLocal;
 import ~.weLiveRemote;
 import ~.playBoard;
 import /.at.lang.futures;
+import /.at.support.timer;
+
+// Java libs
+def Math := jlobby.java.lang.Math;
 
 //DIRTY CONSTANTS
 def rows := 6;
 def cols := 4;
 
+def peerDetectionTime := 5;
+
 deftype Player;
 deftype Board;
 
 def makeWeLive(){
-	object:{		
+	object:{
 		// Id of this player
 		def Id := /.at.support.util.randomNumberBetween(0, 125);
 		
 		// All players discovered so far
-		def players := iterMap.new();	
+		def players := iterMap.new();
 		// Players currently online and playing
-		def onlinePlayers := iterMap.new();		
+		def onlinePlayers := iterMap.new();
 		// New/Reconnected Playres waiting to join
 		def joinPlayers := iterMap.new();
 		
 		// Local playBoard
-		def board := playBoard.new(rows, cols);		
+		def board := playBoard.new(rows, cols);
 		
 		// Local and remote interfaces
 		def local := weLiveLocalInterface.new(self);
@@ -32,29 +38,57 @@ def makeWeLive(){
 		
 		// session
 		def sessionId := -1; // to be initialized
-		
+
 		// Export/discover peers
 		def goOnline() {
-			export: remote as: Player;		
+			export: remote as: Player;
 			whenever: Player discovered: {|plyr|
 				def remoteId;
-				def remoteSessionId;		
+				def sessionPlayers := [];
 				when: plyr<-getId()@FutureMessage becomes: { |remoteid|
-					remoteId := remoteid;			
+					remoteId := remoteid;
 					players.put(remoteid, plyr);
 					system.println("Newplayer Discovered -- " + remoteid);
-				
-					when: plyr<-getSessionId()@FutureMessage becomes: { |remotesessionid|
-						remoteSessionId := remotesessionid;						
+					
+					if: (sessionId == -1)then: { // we have to join/initialize a new game
+						when: plyr<-getSessionId()@FutureMessage becomes: { |remotesessionid|
+							if: (remoteSessionid != -1) then: {// Player has been playing before -> this is not a new game
+								sessionPlayers := sessionPlayers + [[plyr, sessionId]]; // save plyr reference and sessionId
+								}
+							else: {};// new player (starting up a game discovered)
+							};
 						
-						if: (remoteSessionId != -1) then: {	//
+						// Keep discovering Players for 'peerDetectionTime' seconds
+						when: peerDetectionTime.seconds elapsed: {
+							def discoveredPlayers := players.getValueTable();
 							
-						}
-						else: {
+							if: (discoveredPlayers.length <= 0) then: { // No Players discovered -- waiting for players
+								system.println("FATAL -- no players (online/offline) found");
+								// TODO: breakout and recall goOnline(); --> ASK Florian how to break out
+								};
+							if: (sessionPlayers.length <= 0) then:{ // Initialize new game
+								// TODO: initialize new game
+								// Timestamping, etc.
+								};
+							else: { // Join existing game
+								// Find the highest sessionId
+								def currentMax := -1;
+								def currentMaxPlayer;
+								sessionPlayers.map: {|plyr|
+									if: (Math.max(currentMax, plyr.at(2)) == plyr.at(2)) then: {
+										currentMax := plyr.at(2);
+										currentMaxPlayer := plyr.at(1);
+									};
+								};
+								// TODO: join game, most recent session id is in 'currentMax'
+							};
 						};
 					};
+					else: {
+						// TODO: we are reconnected
+						};
 				};
-				
+			
 			};
 		};
 		

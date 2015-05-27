@@ -18,6 +18,12 @@ object:{
 			};
 			board;
 		};
+		
+		def putCell(row, col){	// TODO -> best de playerId/sessionId erbij zetten (prototype maken voor een cell?)
+		};
+		
+		def clearCell(row, col){ // TODO
+		};
 	
 	};
 };
