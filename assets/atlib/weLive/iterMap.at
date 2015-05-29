@@ -64,6 +64,15 @@ object:{
 			while: {iter.hasNext()} do: {
 				res := res + [iter.next()];
 			};
+			iter.remove();
+			res;
+		};
+		// Returns a deepcopy of the iterMap
+		// !WARNING -- all elements should be native datatypes -- WARNING!
+		def deepCopy(){
+			def res := self.new();
+			res.hashMap := self.mapkv({|p| p});
+			res.table := table;
 			res;
 		};
 		def test(){
