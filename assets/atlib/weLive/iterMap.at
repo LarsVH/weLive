@@ -2,8 +2,13 @@
 // Aim: Avoiding to iterate over a Java Hashmap while keeping its advantages
 object:{
 	def iterMap := object: {
-		def hashMap := jlobby.java.util.HashMap.new();
-		def table := [];
+		def hashMap;
+		def table;
+		
+		def init(){
+			hashMap := jlobby.java.util.HashMap.new();
+			table := [];
+		};
 		
 		def get(key) {
 			hashMap.get(key);
@@ -25,17 +30,34 @@ object:{
 			table := table.filter:{|e| e != value};
 			value;
 		};
-		
+		def getHashMap(){
+			hashMap;
+		};		
 		def getValueTable(){
 			table;
 		};
-		
+		// Map a clojure taking 1 argument over the value table
 		def map(clojure) {
 			table.map: clojure;
+		};
+		// Map a clojure (taking/returning a table of length 2 over the key value pairs
+		// Result is a new hashmap
+		def mapkv(clojure) {
+			def iter := hashMap.entrySet().iterator();
+			def res := jlobby.java.util.HashMap.new();
+			while:{iter.hasNext()} do: {
+				def kvpair := iter.next();
+				def [key, value] := clojure([kvpair.getKey(), kvpair.getValue()]);
+				res.put(key, value);				
+			};
+			res;
 		};
 		def at(idx) {
 			table.at(idx);
 		};
+		def length() {
+			table.length();
+		};		
 		def getKeys(){// Returns an AT table of all keys
 			def iter := hashMap.keySet().iterator();
 			def res := [];
