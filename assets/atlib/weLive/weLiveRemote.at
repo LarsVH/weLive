@@ -1,3 +1,6 @@
+import ~.peerElection;
+import ~.misc;
+import /.at.lang.futures;
 
 object:{
 	def weLiveRemoteInterface := object: {
@@ -22,9 +25,10 @@ object:{
 		def getLeader(){
 			parent.leader;
 		};
-		def requestJoin(joinID){			// TODO: steek sessienummer waarvoor gejoined wordt erbij
+		def requestJoin(joinID, session){
+			// TODO: Check of request niet van jezelf
 			if: (parent.leader == parent.ID) then: {
-				system.println("New Joiner -- joinID");
+				system.println("INFO -- New Joiner -- joinID: " + joinID + " -- session:" + session);
 				def joiner := parent.onlinePlayers.get(joinID);
 				parent.joinPlayers.put(joinID, joiner);
 				true; 
@@ -35,7 +39,32 @@ object:{
 				};
 		};
 		def requestLeaderShip(remoteID){
-			if:(parent.id < remoteID)
+			if: (IDsmaller(remoteID, parent.ID)) then: {
+				system.println("WARNING -- requestLeaderShip -- remoteID (" + remoteID + ") smaller than MyID (" + parent.ID + ")");
+			}
+			else: {
+				system.println("INFO -- INBOUND requestLeaderShip -- new Leader: " + remoteID);
+			};
+			parent.leader := remoteID;
+			// XXX maybe create CALLBACK to warn other components of new leader <<<<<<<<<<<<<<<<<<<<< vb: als jij nieuwe leader wordt -> spel starten/hervatten
+		};
+		def requestPeerElection(remoteLeader) {
+			system.println("INFO -- Peer Election requested by: " + remoteLeader);
+			parent.status := "electing";
+			def snapOnlinePlayers := parent.onlinePlayers.deepCopy();
+			def newLeader := peerElection(parent, snapOnlinePlayers);
+			parent.leader := newLeader;		// We are now the new leader
+			if: (newLeader == parent.ID) then:{	
+				system.println("INFO -- I (" + parent.ID + ") am new leader, broadcasting leadershiprequests");
+				snapOnlinePlayers.map({|plyr|
+					plyr<-requestLeaderShip(parent.ID)@OneWay // no return value required
+					});
+			// TODO: jij bent nu de nieuwe leader (doe iets) + vergeet je STATUS niet AAN te PASSEN
+			}
+			else:{
+				system.println("INFO -- We (" + parent.ID + ") do not become leader; new Leader is: " + newLeader);
+			};
+			
 		};
 	};
 };

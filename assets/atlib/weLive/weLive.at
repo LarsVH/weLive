@@ -45,7 +45,7 @@ def makeWeLive(){
 		def goOnline() {
 			export: remote as: Player;
 			def detectOtherPlayers(time){
-				system.println("INFO -- Start detecting other players for " + time + "s");
+				system.println("INFO -- Start detecting other players for " + time + "s");				
 				// GUI output: scanning for other Players
 				when: time elapsed: {
 					if: (onlinePlayers.length > 0) then:
@@ -57,14 +57,15 @@ def makeWeLive(){
 							system.println("INFO -- Statusrequests: " + statusRequests);
 							def currpos := 1;
 							def leaderFound := false;
+							if: (leader != nil) then: {leaderFound := true;}; // FIXME: dirty hack to prevent not detecting to be a leader yourself							
 							def nonInitFound := false;
-							{|break|
+							{|Q|
 								// Check if a leader already exists
 								statusses.each:{ |plyrstatus|									
 									if: (plyrstatus != "init") then: {
 										nonInitFound := true;
 										def plyr := currOnlinePlayers.at(currpos);
-										def plyrleaderID := plyr<-getLeader();
+										def plyrleaderID := plyr<-getLeader()@FutureMessage;
 										when: plyrleaderID becomes: { |leaderID|
 											if:(leaderID == nil) then: {
 												// This player does not have a leader yet -> this is a joiner (because his status != init)
@@ -73,20 +74,25 @@ def makeWeLive(){
 												}
 											else: {
 												// Check if we already discovered the leader
-												def remLeader := players.get(leaderID);
-												if:(remLeader != nil) then: {
+												
+												if:(players.contains(leaderID)) then: {
+													def remLeader := players.get(leaderID);
 													// Send joinrequest to discovered leader
-													joinRequest(remLeader);
+													joinRequest(ID, remLeader, -1);	// -1 = we did not play a session before
+													status := "joining";
 													system.println("INFO -- JoinRequest sent to leader (" + leaderID + ")");
 													leaderFound := true;
-													break();
+													Q();
 												}
 												else: {
 													// continue iterating
 													system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
-													// TODO: restart: peer scanning (-> reset de tabellen en scan opnieuw naar peers (met de hoop om nu wel een leader te vinden))
+													// XXX: intussen waarschijnlijk wel al gevonden <<<<<<<<<<<<<<<
 													};
 											};
+										}
+										catch: { |e|
+											system.println("EXCEPT -- getLeader -- " + e);
 										};
 									}
 									else: {};
@@ -96,25 +102,31 @@ def makeWeLive(){
 							
 							if:((!leaderFound).and:{nonInitFound}) then: {// No leader found, although a peer with status non-init has been found
 								// Scan again (hopefully we find the leader next time)
-								system.println("INFO -- no leader found, init found -> restart detection");
+								system.println("INFO -- no leader found, non-init found -> restart detection");
 								detectOtherPlayers(playerDetectionTime);
 							}
 							else: {
 								if:(!leaderFound) then:{
-									system.println("INFO -- All players are init, no leader found -> peer election");
-									// Peer election
+									system.println("INFO -- All players are init, no leader found -> we become leader");
+									// If no leader is found yet and everyone is @init -> make yourself leader and request an Election
+									leader := ID;
 									status := "electing";
-									peerElection(self, currOnlinePlayers); // do peer election (self = this game)
+									broadcastRequestPeerElection(self, leader);
+									// !!!!! Check dat je ZELF OOK PEERELECTION doet !!!
+									// TODO --> Nieuwe leader moet overnemen en spel starten									
 									}
 								else:{// Leader found and join request sent -> ignore
 									};
 							};
 						
+						}
+						catch: { |e|
+							system.println("EXCEPT -- statusRequests -- " + e);
 						};
 					}
 					else:{
-						system.println("INFO -- No players detected yet " + onlinePlayers.length() + ", restart detection");
-						detectOtherPlayers(playerDetectionTime);
+						system.println("INFO -- No players detected yet: " + onlinePlayers.length() + "waiting for another one to request join");
+						//detectOtherPlayers(playerDetectionTime);
 					};
 				};
 			}; // end detectOtherPlayers
@@ -141,10 +153,22 @@ def makeWeLive(){
 		goOnline();
 	};
 };
+// 
+def broadcastRequestPeerElection(game, oldLeader){
+	if: (oldLeader == game.ID) then: {
+		game.onlinePlayers.map({|plyr|
+			plyr<-requestPeerElection(oldLeader)@OneWay
+			});
+	}
+	else: {
+		system.prinln("ERROR -- Can't request peer election if self != leader");
+	};
+};
 
-def joinRequest(player) {
-	player<-requestJoin(ID);
-	status := "joining";
+
+// TODO
+def joinRequest(myID, leader, session) {
+	leader<-requestJoin(myID, session)@FutureMessage;	
 };
 
 network.online();

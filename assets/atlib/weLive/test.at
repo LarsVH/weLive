@@ -1,15 +1,30 @@
-
-object:{
-
+//import /.at.lang.futures;
 //def ds := object: {
-//	def data := [];
-//	def put(x) {
-//		data := data + [x];
-//	};
+//def data := [];
+//def put(x) {
+//data := data + [x];
+//};
 //};
 
 def abc(x,y){system.println("hihi")};
 
 def dfg(z,a){sytem.println("hehe")};
-}
+
+def brk() {
+	def i := 1;
+	{|Q|
+		while: {true} do: {
+			if: (i > 10) then: {
+				Q();
+			}
+			else:{
+				system.println(i);
+			};
+			i := i +1;
+		};
+	}.escape();
+};
+
+
+
 

@@ -5,12 +5,11 @@ object:{
 	def IDsmaller(x,y){
 		if:(x < y) then: {
 			true;
-		};
+		}
 		else:{
 			false;
 		};
 	};
-	
 };
 // Java iterable collection to table (designed for Java <Set>)
 //def iterableToTable(iterable){

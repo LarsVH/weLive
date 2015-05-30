@@ -8,12 +8,13 @@ object:{
 		def init(){
 			hashMap := jlobby.java.util.HashMap.new();
 			table := [];
-		};
-		
+		};		
+		def contains(key) {
+			hashMap.containsKey(key);
+		};		
 		def get(key) {
 			hashMap.get(key);
-		};
-		
+		};		
 		def put(key,value){
 			if: (hashMap.get(key) == nil) then:{
 				hashMap.put(key,value);
@@ -23,8 +24,7 @@ object:{
 			else: {// Key is already in iterMap, ignore
 				false;
 			};
-		};
-		
+		};		
 		def remove(key){
 			def value := hashMap.remove(key);
 			table := table.filter:{|e| e != value};
@@ -64,7 +64,7 @@ object:{
 			while: {iter.hasNext()} do: {
 				res := res + [iter.next()];
 			};
-			iter.remove();
+			//iter.remove();
 			res;
 		};
 		// Returns a deepcopy of the iterMap

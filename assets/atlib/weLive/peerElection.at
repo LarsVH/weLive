@@ -2,46 +2,39 @@ import ~.misc;
 
 // TODO:---------------------------------------TESTME-----------------------------------------
 object:{
+	// Returns ID of new leader;
 	def peerElection(game, snapOnlinePlayers){
 		system.println("DEBUG -- Peer election init");
 		def myID := game.ID;
 		if: (game.status != "init") then: {
-			myIDhighest := true;
-			playerIDs := snapOnlinePlayers.getKeys();// get all playerIDs from snapOnlinePlayers
+			def playerIDs := snapOnlinePlayers.getKeys();// get all playerIDs from snapOnlinePlayers
+			def highestID := myID;
 			system.println("DEBUG -- Playerids: " + playerIDs);
 			{|break|
 				// Loop over all IDs to check whether our ID is highest
 				playerIDs.each:{|remPlyrID|
 					if:(IDsmaller(myID, remPlyrID)) then: {
 						// No possibility to become leader
-						system.println("INFO -- myID (" + myID + ") < RemoteID (" + remPlyrID + ") -> cannot become leader, break");
-						myIDhighest := false;
-						break;
+						system.println("INFO -- myID (" + myID + ") < RemoteID (" + remPlyrID + ") -> cannot become leader");
+						highestID := remPlyrID;
 					}
 					else: { // Still making chance to become leader
 						};
 				};
-			}.escape();
-			// Our ID is highest -> broadcast leaderrequest to all players
-			if: (myIDhighest) then: {
-				system.println("INFO -- I (" + myID + ") become leader, broadcast leadershiprequests");
-				if: (snapOnlinePlayers == game.onlinePlayers) then:{
-					// TODO: broadcast leadership request to all snap (online) players
-					// game.sendleadership...
-					}
+			}.escape();			
+			if: (snapOnlinePlayers.getValueTable() == game.onlinePlayers.getValueTable()) then:{
+				if: (highestID == myID) then: {
+					system.println("INFO -- MyID (" + myID + ") is highest");
+				}
 				else:{
-					system.println("WARNING -- onlinePlayers map has changed, aborting leadershiprequest");
-					// TODO: restart peer election
-					};
-			}
-			else: {// Our ID is not highest -> we cannot become leader
-				if: (snapOnlinePlayers == game.onlinePlayers) then: {//--- todo: maak dit wat mooier (code duplicatie met hierboven)
 					// wait for another peer to claim leadership
 					// XXX: zet eventueel één of ander mechanisme op moest het te lang duren eer er een leader komt
-					}
-				else: {// 
-					system.println("WARNING -- onlinePlayers map has changed, retrying to become leader");
-				};
+					};
+				highestID;
+			}
+			else:{
+				system.println("WARNING -- onlinePlayers map has changed, restarting peer election");
+				peerElection(game, game.onlinePlayers.deepCopy());
 			};
 		}
 		else: {
