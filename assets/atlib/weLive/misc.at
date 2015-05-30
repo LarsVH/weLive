@@ -1,0 +1,44 @@
+import /.at.lang.futures;
+//import ~.test;
+
+object:{
+	def IDsmaller(x,y){
+		if:(x < y) then: {
+			true;
+		};
+		else:{
+			false;
+		};
+	};
+	
+};
+// Java iterable collection to table (designed for Java <Set>)
+//def iterableToTable(iterable){
+//def itr := iterable.iterator();
+//};
+
+
+// DEBUG
+//--------------------------------------
+
+//def obj := object:{
+//	def xx(y){y+1};
+//};
+
+//def f := obj<-xx(1)@FutureMessage;
+
+// // [future, resolver] := makeFuture() // //
+//def [futa, resa] := makeFuture();
+//def [futb, resb] := makeFuture();
+//def futs := [futa, futb];
+
+
+
+//def g := group: futs;
+
+//def y;
+
+//when: g becomes: { |res|
+//system.println("resolved");
+//y := res;
+//};

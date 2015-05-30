@@ -1,0 +1,15 @@
+
+object:{
+
+//def ds := object: {
+//	def data := [];
+//	def put(x) {
+//		data := data + [x];
+//	};
+//};
+
+def abc(x,y){system.println("hihi")};
+
+def dfg(z,a){sytem.println("hehe")};
+}
+

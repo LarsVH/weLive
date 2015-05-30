@@ -1,3 +1,4 @@
+
 object:{
 	def weLiveRemoteInterface := object: {
 		
@@ -5,15 +6,36 @@ object:{
 		def init(prnt) {
 			parent := prnt;
 		};
-		def getId(){
-			parent.Id;
+		def getID(){
+			parent.ID;
 		};
 		
 		def getPlayBoard(){
 			parent.board;
 		};
-		def getSessionId(){
-			parent.sessionId;
-		}
+		def getSessionID(){
+			parent.sessionID;
+		};
+		def getStatus(){
+			parent.status;
+		};
+		def getLeader(){
+			parent.leader;
+		};
+		def requestJoin(joinID){			// TODO: steek sessienummer waarvoor gejoined wordt erbij
+			if: (parent.leader == parent.ID) then: {
+				system.println("New Joiner -- joinID");
+				def joiner := parent.onlinePlayers.get(joinID);
+				parent.joinPlayers.put(joinID, joiner);
+				true; 
+				}
+			else: {
+				system.println("ERROR -- RemoteFacade -- " + joinID + " wants to join, while me not leader");
+				false;
+				};
+		};
+		def requestLeaderShip(remoteID){
+			if:(parent.id < remoteID)
+		};
 	};
 };

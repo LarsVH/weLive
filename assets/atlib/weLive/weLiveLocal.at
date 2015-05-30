@@ -5,8 +5,8 @@ object:{
 			parent := prnt;
 		};
 		
-		def setId(newId) {
-			parent.Id := newId;
+		def setID(newID) {
+			parent.ID := newID;
 		};
 	};
 };

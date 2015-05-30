@@ -1,0 +1,51 @@
+import ~.misc;
+
+// TODO:---------------------------------------TESTME-----------------------------------------
+object:{
+	def peerElection(game, snapOnlinePlayers){
+		system.println("DEBUG -- Peer election init");
+		def myID := game.ID;
+		if: (game.status != "init") then: {
+			myIDhighest := true;
+			playerIDs := snapOnlinePlayers.getKeys();// get all playerIDs from snapOnlinePlayers
+			system.println("DEBUG -- Playerids: " + playerIDs);
+			{|break|
+				// Loop over all IDs to check whether our ID is highest
+				playerIDs.each:{|remPlyrID|
+					if:(IDsmaller(myID, remPlyrID)) then: {
+						// No possibility to become leader
+						system.println("INFO -- myID (" + myID + ") < RemoteID (" + remPlyrID + ") -> cannot become leader, break");
+						myIDhighest := false;
+						break;
+					}
+					else: { // Still making chance to become leader
+						};
+				};
+			}.escape();
+			// Our ID is highest -> broadcast leaderrequest to all players
+			if: (myIDhighest) then: {
+				system.println("INFO -- I (" + myID + ") become leader, broadcast leadershiprequests");
+				if: (snapOnlinePlayers == game.onlinePlayers) then:{
+					// TODO: broadcast leadership request to all snap (online) players
+					// game.sendleadership...
+					}
+				else:{
+					system.println("WARNING -- onlinePlayers map has changed, aborting leadershiprequest");
+					// TODO: restart peer election
+					};
+			}
+			else: {// Our ID is not highest -> we cannot become leader
+				if: (snapOnlinePlayers == game.onlinePlayers) then: {//--- todo: maak dit wat mooier (code duplicatie met hierboven)
+					// wait for another peer to claim leadership
+					// XXX: zet eventueel één of ander mechanisme op moest het te lang duren eer er een leader komt
+					}
+				else: {// 
+					system.println("WARNING -- onlinePlayers map has changed, retrying to become leader");
+				};
+			};
+		}
+		else: {
+			system.println("ERROR -- peerElection: Can't elect peers while gamestatus == init");
+		};
+	};
+}
