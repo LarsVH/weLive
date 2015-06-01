@@ -1,6 +1,27 @@
-object:{
-	def playBoard := object: {
-		def board := [];
+import /.at.support.timer;
+
+object:{	
+	def cell := isolate: {
+		def owner;
+		def birthTime;
+				
+		def init(ownr, birthTm := now()){
+			owner := owner;
+			birthTime := birthTm;
+		};
+		def deepCopy(){
+			self.new(owner, birthTm);		
+		};
+		def older(cell1, cell2) {
+			if:(cell1.birthTime <= cell2.birthTime) then: {true;}
+			else: {false;};
+		}
+	};
+	// Motivation to make it an isolate
+	// - Not 'that' much data to copy
+	// - Time restrictions (a session is only played during a certain amount of time). Delays caused by futures cannot be tolerated
+	def playBoard := isolate: {
+		def board := [];		// Structure: One table represents all rows. Each row contains another table of length == cols
 		
 		def init(rows, cols) {
 			def rowit := rows;
@@ -18,6 +39,38 @@ object:{
 			};
 			board;
 		};
+		def placeCell(cell, row, col) {
+			if: (board != []) then: {
+				board.at(row).atPut(col, cell);
+			}
+			else: {
+				system.println("ERROR -- PlaceCell -- Board not initialized");
+			}; 
+		};
+		def getCell(row, col){
+			def res := board.at(row).at(col);
+			if: (res != -1) then: {res}
+			else:{
+			system.println("WARNING -- getCell -- cell does not exist!");
+			false;
+			};
+		};
+		def clear(){
+			def rows := board.length();
+			def cols := board.at(1).length();
+			board := [];
+			init(rows, cols);
+		};
+		def removeCell(row, col){
+			board.at(row).atPut(col, -1);
+		};
+		def prettyPrint(){
+			def iter := 1;
+			while:{iter <= board.length()} do: {
+				system.println(board.at(iter));
+				iter := iter + 1;
+			};
+		};		
 	
 	};
 };

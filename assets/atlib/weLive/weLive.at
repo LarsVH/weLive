@@ -246,9 +246,9 @@ def makeWeLive(){
 					startNewGame(startBoard, sessionPlayers);
 				};
 			}
-			else: {
-				// TODO: maak sessionPlayers leeg (! niet op nil zetten!)
-				};// Someone else is new leader
+			else: { // Someone else is new leader
+					sessionPlayers := iterMap.new();	// no leader -> do not keep track of sessionPlayers -> clear				
+				};
 			};
 		
 		// End-of-Session callback
