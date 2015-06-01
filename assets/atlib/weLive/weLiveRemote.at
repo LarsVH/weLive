@@ -1,6 +1,7 @@
 import ~.peerElection;
 import ~.misc;
-import /.at.lang.futures;
+import /.at.lang.futures exclude seconds,minutes,millisec;
+import /.at.support.timer;
 
 object:{
 	def weLiveRemoteInterface := object: {
@@ -11,13 +12,16 @@ object:{
 		};
 		def getID(){
 			parent.ID;
-		};
-		
-		def getPlayBoard(){
-			parent.board;
+		};		
+		def getStartPlayBoard(){
+			parent.startBoard;
 		};
 		def getSessionID(){
-			parent.sessionID;
+			parent.currSession.ID;
+		};
+		def getSession(){
+			system.println("DEBUG -- SessionRequest");
+			parent.currSession;
 		};
 		def getStatus(){
 			parent.status;
@@ -30,7 +34,14 @@ object:{
 			if: (parent.leader == parent.ID) then: {
 				system.println("INFO -- New Joiner -- joinID: " + joinID + " -- session:" + session);
 				def joiner := parent.onlinePlayers.get(joinID);
+				if: (parent.sessionPlayers.contains(joinID)) then: {
+					system.println("WARNING -- joiner (" + joinID + ") already in-game");
+					// our joiner is already in the game
+					// this case can happen when init code is not finished when game already started
+				}
+				else: {
 				parent.joinPlayers.put(joinID, joiner);
+				};
 				true; 
 				}
 			else: {
@@ -45,8 +56,7 @@ object:{
 			else: {
 				system.println("INFO -- INBOUND requestLeaderShip -- new Leader: " + remoteID);
 			};
-			parent.leader := remoteID;
-			// XXX maybe create CALLBACK to warn other components of new leader <<<<<<<<<<<<<<<<<<<<< vb: als jij nieuwe leader wordt -> spel starten/hervatten
+			parent.onNewLeader(remoteID);
 		};
 		def requestPeerElection(remoteLeader) {
 			system.println("INFO -- Peer Election requested by: " + remoteLeader);
@@ -59,12 +69,33 @@ object:{
 				snapOnlinePlayers.map({|plyr|
 					plyr<-requestLeaderShip(parent.ID)@OneWay // no return value required
 					});
-			// TODO: jij bent nu de nieuwe leader (doe iets) + vergeet je STATUS niet AAN te PASSEN
+				parent.onNewLeader(newLeader);
 			}
 			else:{
 				system.println("INFO -- We (" + parent.ID + ") do not become leader; new Leader is: " + newLeader);
 			};
 			
+		};
+		def startSession(session){
+			system.println("INFO -- INBOUND -- StartSession, sessionID:" + session.ID);
+			parent.status := "inSession";
+			parent.currSession := session;
+			// TODO: GUI: StartSession	(session) <- moves moeten op spelbord van session object worden gedaan
+			// currSession <- aanpassen bij elke move
+			
+			
+			def duration := (session.endTime - now());
+			when: duration elapsed: {
+			// TODO: GUI: StopSession (geen moves meer toegelaten)
+			system.println("INFO -- Session over");
+			parent.sessionOver(session);
+			};
+			
+		};
+		def resumeSession(session){
+			// TODO
+
+			// TODO: GUI: ResumeSession
 		};
 	};
 };

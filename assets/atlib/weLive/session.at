@@ -1,0 +1,15 @@
+object:{
+	def session := isolate: {
+		def ID;
+		def board;
+		def players;
+		def endTime;		
+		
+		def init(sessionID, playBoard, plyrs, endTm){
+			ID := sessionID;
+			board := playBoard;
+			endTime := endTm;
+			players := plyrs;			
+		};
+	};
+};

@@ -1,4 +1,5 @@
 //import /.at.lang.futures;
+import /.at.support.timer;
 //def ds := object: {
 //def data := [];
 //def put(x) {
@@ -25,6 +26,27 @@ def brk() {
 	}.escape();
 };
 
+def plusser := object: {
+	def plus(x,y) {
+		//system.println("blub");
+		x+y;
+	};
+};
 
+//def sync := .plus(1,2);
+//def async := <-plus(2,3)@FutureMessage;
 
+//def ftr := plusser <+ async;
+//whenAny: ftr becomes: { |res|
+//	system.println("Resolved with: " + res);
+//};
 
+def dur := now() + 2.seconds() - now();
+when: dur elapsed: {
+	system.println("It works");
+}; 
+
+def b := c + d;
+def c := 3;
+def d := 4;
+system.println(b);
