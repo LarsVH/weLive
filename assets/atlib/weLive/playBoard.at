@@ -1,19 +1,19 @@
 import /.at.support.timer;
 
-object:{	
+object:{
 	def cell := isolate: {
 		def owner;
 		def birthTime;
-				
-		def init(ownr, birthTm := now()){
+		
+		def init(ownr, birthTm := jlobby.java.lang.System.currentTimeMillis()){
 			owner := owner;
 			birthTime := birthTm;
 		};
 		def deepCopy(){
-			self.new(owner, birthTm);		
+			self.new(owner, birthTm);
 		};
-		def older(cell1, cell2) {
-			if:(cell1.birthTime <= cell2.birthTime) then: {true;}
+		def olderThan(cell2) {
+			if:((birthTime < cell2.birthTime).or:{birthTime == cell2.birthTime}) then: {true;}
 			else: {false;};
 		}
 	};
@@ -21,8 +21,8 @@ object:{
 	// - Not 'that' much data to copy
 	// - Time restrictions (a session is only played during a certain amount of time). Delays caused by futures cannot be tolerated
 	def playBoard := isolate: {
-		def board := [];		// Structure: One table represents all rows. Each row contains another table of length == cols
-		
+		def board := [];// Structure: One table represents all rows. Each row contains another table of length == cols
+
 		def init(rows, cols) {
 			def rowit := rows;
 			def colit;
@@ -39,6 +39,12 @@ object:{
 			};
 			board;
 		};
+		def getRowLength(){
+			board.at(1).length();
+		};
+		def getColLength(){
+			board.length();
+		};
 		def placeCell(cell, row, col) {
 			if: (board != []) then: {
 				board.at(row).atPut(col, cell);
@@ -51,8 +57,8 @@ object:{
 			def res := board.at(row).at(col);
 			if: (res != -1) then: {res}
 			else:{
-			system.println("WARNING -- getCell -- cell does not exist!");
-			false;
+				system.println("WARNING -- getCell -- cell does not exist!");
+				false;
 			};
 		};
 		def clear(){
@@ -70,7 +76,67 @@ object:{
 				system.println(board.at(iter));
 				iter := iter + 1;
 			};
-		};		
-	
+		};
 	};
+	// Conflict? -> the oldest cell stays alive
+	// Returns: [merged playboard, cells deleted pb1, cells deleted pb2]
+	def merge(pb1, pb2){// TODO: TESTME
+		if:((pb1.getRowLength() == pb2.getRowLength()).and:{pb1.getColLength() == pb2.getColLength()}) then:{
+			def res := playBoard.new(pb1.getColLength(), pb1.getRowLength());// resultboard to return
+			def cellsRemoved1 := [];// cells removed from pb1
+			def cellsRemoved2 := [];
+			def rowIter := 1;// Iterates over rows
+			while: {rowIter <= pb1.getColLength()} do: {
+				def currRow1 := pb1.board.at(rowIter);
+				def currRow2 := pb2.board.at(rowIter);
+				def colIter := 1;
+				while: {colIter <= pb1.getRowLength()} do: {
+					def cell1 := currRow1.at(colIter);
+					def cell2 := currRow2.at(colIter);
+					
+					if:(cell1 == -1) then:{
+						if:(cell2 == -1) then: {} //ignore (both do not exist)
+						else: {res.placeCell(cell2, rowIter, colIter);};// cell1 does not exist, cell2 does
+						}
+					else: {
+						if:(cell2 == -1) then:{res.placeCell(cell1, rowIter, colIter);}// cell1 exist, cell2 not
+						else:{
+							// both cells exist
+							// Cell1 older (or equally old) than cell2 -> cell1 survives
+							if: (cell1.olderThan(cell2)) then: {
+								res.placeCell(cell1, rowIter, colIter);
+								cellsRemoved2 := cellsRemoved2 + [cell2];
+							}
+							else: {
+								res.placeCell(cell2, rowIter, colIter);
+								cellsRemoved1 := cellsRemoved1 + [cell1];
+							};
+						};
+					};
+					colIter := colIter + 1;
+				};
+				rowIter := rowIter + 1;
+			};
+			[res, cellsRemoved1, cellsRemoved2];
+		}
+		else: {
+			system.println("ERROR -- PlayBoard: merge -- Playboards are not of equal sizes");
+		};
+	};
+	def computeNextCycle() {
+	};
+	// TEST
+	def c1 := cell.new("you");
+	def pb1 := playBoard.new(2,3);
+	def pb2 := playBoard.new(2,3);
+	def c2 := cell.new("me");
+	def c3 := cell.new("brr");
+	pb1.placeCell(c1, 2,2);
+	pb2.placeCell(c1, 2,2);
+	pb1.placeCell(c1, 2, 3);
+	pb2.placeCell(c3, 2, 2);
+	pb1.placeCell(c2, 1,1);
+	pb2.placeCell(c3, 1,2);
+	merge(pb1, pb2);
+
 };
