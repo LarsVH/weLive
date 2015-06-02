@@ -63,7 +63,7 @@ def makeWeLive(){
 						def statusRequests := group: currOnlinePlayers.map({|plyr| plyr<-getStatus()@FutureMessage});
 						when: statusRequests becomes: { |statusses|
 							system.println("INFO -- Statusrequests: " + statusRequests);
-							def currpos := 1;							
+							def currpos := 1;
 							if: (leader != nil) then: {leaderFound := true;}; // FIXME: dirty hack to prevent not detecting to be a leader yourself
 							def nonInitFound := false;
 							{|Q|
@@ -90,7 +90,7 @@ def makeWeLive(){
 														leaderFound := true;
 														leader := leaderID;
 														//Q();
-													}
+														}
 													else: {
 														system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
 														// XXX: intussen waarschijnlijk wel al gevonden <<<<<<<<<<<<<<<
@@ -183,74 +183,44 @@ def makeWeLive(){
 			system.println("DEBUG -- onNewLeader. MyID:" + ID + "; leaderID: " + newLeaderID);
 			if: (leader == ID) then: {
 				// We are new leader
-				// Get all existing sesssionPlayers
-				sessionPlayers := currSession.players.deepCopy();
-				
-				// Get Sessionids
-				def sessionPlayersRefs := sessionPlayers.getValueTable();
-				
-				if:(sessionPlayersRefs.length() > 0) then: {
-					def sessionIDRequests := group: sessionPlayersRefs.map({|plyr|
-						plyr<-getSessionID()@FutureMessage;
-					});
-					when: sessionIDRequests becomes: {|sessionIDs|
-						// determine the higest sessionID
-						def highestSessionID := currSession.ID;
-						def highestSessionPlayer;
-						def i := 1;
-						while: {i <= sessionIDs.length()} do: {
-							def currSessionID := sessionIDs.at(i);
-							if:(highestSessionID < currSessionID) then: {
-								highestSessionID := currentSessionID;
-								highestSessionPlayer := onlinePlayerRefs.at(i);
-							}
-							else: {};
-							i := i + 1;
-						};
-						// XXX: DEPRECATED: als sessID van iedereen == -1, dan bestaan er nog geen sessionPlayers
-						// --> wordt opgevangen door andere test
-						// TODO: remove
-						if: (highestSessionID == -1) then: {
-							system.println("WARNING -- THIS CASE SHOULD NO LONGER HAPPEN HighesSession id == -1");
-							// start a brand new game;
-							onlinePlayers.mapkv ({|kv|
+				// Get all existing sesssionPlayers (< ken je nog niet als je net leader wordt);
+
+				// Go through all onlineplayers and request their session objects
+				// Get the one with the highest sessionID
+				// deepCopy its' players into sessionPlayers (if exist in onlinePlayers)
+				// merge and compute next cycle (based on the highesSessionID object) -> use sessionOver(session)
+				def sessionRequests := group: onlinePlayers.map({|plyr|
+					 plyr<- getSession()@FutureMessage;
+				 });
+				 when: sessionRequests becomes: {|sessions|
+					 def highestSession := currSession;
+					 sessions.each:{|session|
+						 if:(session.ID > highestSession.ID) then:{
+							 highestSession := session;
+						 };
+					 };
+					def hsPlayers := highestSession.players();// hsPlayers == higest session players (a table)
+					if:(hsPlayers.length() > 0) then: {
+						sessionPlayers := iterMap.new(); // make sure sessionPlayers is empty
+						hsPlayersCopy := hsPlayers.deepCopy();
+						hsPlayersCopy.mapkv({|kv|
+							if:(onlinePlayers.contains(kv.at(1))) then:{
 								sessionPlayers.put(kv.at(1), kv.at(2));
-							});
-							// include Joiners
-							joinPlayers.mapkv({ |kv|
-								sessionPlayers.put(kv.at(1), kv.at(2));
-								kv;// mapkv requires a return value
-								});
-							joinPlayers := iterMap.new();// clear joinPlayers map
-							startBoard := playBoard.new(rows, cols);
-							startNewGame(startBoard, sessionPlayers);
-						};
-						// TODO
-						else: { // A game already exists, continue with it
-							def boardFut;
-							if: (!(highestSessionID < currSession.ID)) then: {// Someone else has a higher sessionID -> request his startboard
-								boardFut := highestSessionPlayer<-getStartPlayBoard()@FutureMessage;
-								when: boardFuture becomes: {|brd|
-									startBoard := brd;
-									continueGame(startBoard, sessionPlayers);
-								};
 							}
-							else: {// I have the highest session ID -> use my startPlayboard
-								continueGame(startBoard, sessionPlayers);
-								//boardFut := remote<-getStartPlayBoard()@FutureMessage;
-								};
-						};
+							else: {system.println("WARNING -- newLeader -- a sessionuser went offline");};
+							kv;});
+						sessionOver(highestSession);
+					}
+					else: {
+						//no sessionplayers exist yet (= no game exists yet)
+						// => start new game with all onlinePlayers (clear joinmap)
+						system.println("INFO -- No sessionPlayers yet -- starting new game");
+						joinPlayers := iterMap.new();// clear joiners
+						sessionPlayers := onlinePlayers.deepCopy(); 
+						def startBoard := playBoard.new(rows, cols);
+						startNewGame(startBoard, sessionPlayers);
 					};
-				} 
-				else: {
-					//no sessionplayers exist yet (= no game exists yet)
-					// => start new game with all onlinePlayers (clear joinmap)
-					system.println("INFO -- No sessionPlayers yet -- starting new game");
-					joinPlayers := iterMap.new();// clear joiners
-					sessionPlayers := onlinePlayers.deepCopy(); 
-					def startBoard := playBoard.new(rows, cols);
-					startNewGame(startBoard, sessionPlayers);
-				};
+				 };
 			}
 			else: { // Someone else is new leader
 				sessionPlayers := iterMap.new();// no leader -> do not keep track of sessionPlayers -> clear
@@ -260,42 +230,54 @@ def makeWeLive(){
 		// End-of-Session callback
 		def sessionOver(session){
 			status := "endOfSession";
-			if: (leader == ID) then: {
-				when: leaderMarginTime elapsed: {// safety margin (prevent errors caused by connections delays)
-					def sessionsFut := group: session.players.map({|plyr|
-						plyr<-getSession()@FutureMessage;
-					});
-					when: sessionsFut becomes: {|sessions|
-						system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
-						def merged := [currSession.board];// start merging with our playboard
-						sessions.each:{|session|
-							merged := merge(merged.at(1), session.board);
-							// cellsLost1 := merged.at(2);// not taken into account in this version of the game
-							// cellsLost2 := merged.at(3);
-							};
-						def mergedSession := merged.at(1);
-						// merge joiners in sessionPlayers
-						joinPlayers.mapkv({ |kv|
-							sessionPlayers.put(kv.at(1), kv.at(2));
-							kv;// mapkv requires a return value
-							});
-						joinPlayers := iterMap.new();
-						def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedSession), sessionPlayers, (now() + sessionDurationMillis));
-						sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
-						remote.startSession(nextSession);
-					};
-					// merge playboards
-					// include joiners
-					// make new session object (id + 1)
-					// start new session
+			def highestID := ID;	// start with yourself (in case the leader went offline)
+			onlinePlayers.mapkv({|kv|
+				if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
+				kv;});
+			joinPlayers.mapkv({|kv|
+				if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
+				kv;});
+			if: (highestID != leader) then: {	// leader cannot longer be leader
+				sessionPlayers := iterMap.new();
+				broadcastRequestPeerElection(self, leader);				
+			} 
+			else: {
+				if: (leader == ID) then: {
+					when: leaderMarginTime elapsed: {// safety margin (prevent errors caused by connections delays)
+						def sessionsFut := group: session.players.map({|plyr|
+							plyr<-getSession()@FutureMessage;
+						});
+						when: sessionsFut becomes: {|sessions|
+							system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
+							def merged := [currSession.board];// start merging with our playboard
+							sessions.each:{|session|
+								merged := merge(merged.at(1), session.board);
+								// cellsLost1 := merged.at(2);// not taken into account in this version of the game
+								// cellsLost2 := merged.at(3);
+								};
+							def mergedSession := merged.at(1);
+							// merge joiners in sessionPlayers
+							joinPlayers.mapkv({ |kv|
+								sessionPlayers.put(kv.at(1), kv.at(2));
+								kv;// mapkv requires a return value
+								});
+							joinPlayers := iterMap.new();
+							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedSession), sessionPlayers, (now() + sessionDurationMillis));
+							sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
+							remote.startSession(nextSession);
+						};
+						// merge playboards
+						// include joiners
+						// make new session object (id + 1)
+						// start new session
 
-				};
-			}
-			// Leaderwill retrieve our sessionobject
-			// Wait for next session to start
-			else:{// GUI: wait for next session
-				}; 
-		
+					};
+				}
+				// Leaderwill retrieve our sessionobject
+				// Wait for next session to start
+				else:{// GUI: wait for next session
+					}; 
+			};
 		};
 	
 	

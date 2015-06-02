@@ -11,7 +11,10 @@ object:{
 		};		
 		def contains(key) {
 			hashMap.containsKey(key);
-		};		
+		};
+		def	containsValue(value){
+			table.contains(value);
+		};	
 		def get(key) {
 			hashMap.get(key);
 		};		

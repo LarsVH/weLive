@@ -2,7 +2,7 @@ object:{
 	def session := isolate: {
 		def ID;
 		def board;
-		def players;
+		def players;		// iterMap
 		def endTime;
 	
 		

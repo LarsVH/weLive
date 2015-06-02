@@ -1,0 +1,68 @@
+sessionPlayers := currSession.players.deepCopy();
+				
+				// Get Sessionids
+				def sessionPlayersRefs := sessionPlayers.getValueTable();
+				
+				// THIS CASE HAS NEVER BEEN TESTED!!!
+				if:(sessionPlayersRefs.length() > 0) then: {
+					def sessionIDRequests := group: sessionPlayersRefs.map({|plyr|
+						plyr<-getSessionID()@FutureMessage;
+					});
+					when: sessionIDRequests becomes: {|sessionIDs|
+						// determine the higest sessionID
+						def highestSessionID := currSession.ID;
+						def highestSessionPlayer;
+						def i := 1;
+						while: {i <= sessionIDs.length()} do: {
+							def currSessionID := sessionIDs.at(i);
+							if:(highestSessionID < currSessionID) then: {
+								highestSessionID := currentSessionID;
+								highestSessionPlayer := onlinePlayerRefs.at(i);
+							}
+							else: {};
+							i := i + 1;
+						};
+						// XXX: DEPRECATED: als sessID van iedereen == -1, dan bestaan er nog geen sessionPlayers
+						// --> wordt opgevangen door andere test
+						// TODO: remove
+						if: (highestSessionID == -1) then: {
+							system.println("WARNING -- THIS CASE SHOULD NO LONGER HAPPEN HighesSession id == -1");
+							// start a brand new game;
+							onlinePlayers.mapkv ({|kv|
+								sessionPlayers.put(kv.at(1), kv.at(2));
+							});
+							// include Joiners
+							joinPlayers.mapkv({ |kv|
+								sessionPlayers.put(kv.at(1), kv.at(2));
+								kv;// mapkv requires a return value
+								});
+							joinPlayers := iterMap.new();// clear joinPlayers map
+							startBoard := playBoard.new(rows, cols);
+							startNewGame(startBoard, sessionPlayers);
+						};
+						// TODO
+						else: { // A game already exists, continue with it
+							def boardFut;
+							if: (!(highestSessionID < currSession.ID)) then: {// Someone else has a higher sessionID -> request his startboard
+								boardFut := highestSessionPlayer<-getStartPlayBoard()@FutureMessage;
+								when: boardFuture becomes: {|brd|
+									startBoard := brd;
+									continueGame(startBoard, sessionPlayers);
+								};
+							}
+							else: {// I have the highest session ID -> use my startPlayboard
+								continueGame(startBoard, sessionPlayers);
+								//boardFut := remote<-getStartPlayBoard()@FutureMessage;
+								};
+						};
+					};
+				} 
+				else: {
+					//no sessionplayers exist yet (= no game exists yet)
+					// => start new game with all onlinePlayers (clear joinmap)
+					system.println("INFO -- No sessionPlayers yet -- starting new game");
+					joinPlayers := iterMap.new();// clear joiners
+					sessionPlayers := onlinePlayers.deepCopy(); 
+					def startBoard := playBoard.new(rows, cols);
+					startNewGame(startBoard, sessionPlayers);
+				};
