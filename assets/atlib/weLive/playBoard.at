@@ -6,7 +6,7 @@ object:{
 		def birthTime;
 		
 		def init(ownr, birthTm := jlobby.java.lang.System.currentTimeMillis()){
-			owner := owner;
+			owner := ownr;
 			birthTime := birthTm;
 		};
 		def deepCopy(){
@@ -70,10 +70,10 @@ object:{
 			board.at(row).atPut(col, -1);
 		};
 		def prettyPrint(){
-			def iter := 1;
-			while:{iter <= board.length()} do: {
-				system.println(board.at(iter));
-				iter := iter + 1;
+			def rowIter := 1;
+			while:{rowIter <= board.length()} do: {
+				system.println(board.at(rowIter).map:{|cell| if:(cell == -1) then: {-1} else:{cell.owner};});
+				rowIter := rowIter + 1;
 			};
 		};
 	};
@@ -192,17 +192,17 @@ object:{
 							plyrs := plyrs + [liveNeighBours.at(1).owner];
 							if:(plyrs.contains(liveNeighBours.at(2).owner)) then: {
 								// majority [[X][X][0]]
-								newCell := cell.new(liveNeighBours.at(2));
+								newCell := cell.new(liveNeighBours.at(2).owner);
 							}
 							else: {
 								plyrs := plyrs + [liveNeighBours.at(2).owner];
 								if:(plyrs.contains(liveNeighBours.at(3).owner)) then: {
 									// majority [[X][0][X]] or [[0][X][X]]
-									newCell := cell.new(liveNeighBours.at(3));
+									newCell := cell.new(liveNeighBours.at(3).owner);
 								}
 								else: { // no majority -> random draw
 									def winner := /.at.support.util.randomNumberBetween(1,4); // returns 1, 2 or 3
-									newCell := cell.new(liveNeighBours.at(winner));
+									newCell := cell.new(liveNeighBours.at(winner).owner);
 								};
 							};
 							resPB.placeCell(newCell, rowIter, colIter);
@@ -218,8 +218,8 @@ object:{
 	};
 	// TEST
 	def c1 := cell.new("you");
-	def pb1 := playBoard.new(2,3);
-	def pb2 := playBoard.new(2,3);
+	def pb1 := playBoard.new(3,3);
+	def pb2 := playBoard.new(3,3);
 	def c2 := cell.new("me");
 	def c3 := cell.new("brr");
 	pb1.placeCell(c1, 2,2);
