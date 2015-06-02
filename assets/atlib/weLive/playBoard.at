@@ -124,6 +124,8 @@ object:{
 		};
 	};
 	def computeNextCycle() {
+	
+	
 	};
 	// TEST
 	def c1 := cell.new("you");
@@ -133,10 +135,18 @@ object:{
 	def c3 := cell.new("brr");
 	pb1.placeCell(c1, 2,2);
 	pb2.placeCell(c1, 2,2);
-	pb1.placeCell(c1, 2, 3);
-	pb2.placeCell(c3, 2, 2);
+	pb1.placeCell(c3, 2, 3);
+	pb2.placeCell(c1, 2, 3);
 	pb1.placeCell(c2, 1,1);
 	pb2.placeCell(c3, 1,2);
-	merge(pb1, pb2);
+	def m := merge(pb1, pb2);
+	
+	pb1.prettyPrint();
+	system.println(" ");
+	pb2.prettyPrint();
+	system.println(" ");
+	m.at(1).prettyPrint();
+	system.println(" ");
+	system.println(""+ m.at(2) + " " + m.at(3));
 
 };
