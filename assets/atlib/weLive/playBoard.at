@@ -57,8 +57,7 @@ object:{
 			def res := board.at(row).at(col);
 			if: (res != -1) then: {res}
 			else:{
-				system.println("WARNING -- getCell -- cell does not exist!");
-				false;
+				-1;
 			};
 		};
 		def clear(){
@@ -123,9 +122,99 @@ object:{
 			system.println("ERROR -- PlayBoard: merge -- Playboards are not of equal sizes");
 		};
 	};
-	def computeNextCycle() {
 	
-	
+	// Computes the next generation of a playboard
+	def computeNextGen(pb) {
+		let: { |rows := pb.getColLength(),
+			cols := pb.getRowLength()|
+			// Helpfunction
+			// Returns [..] containing all neighboring cells of a position (row, col)
+			// dead cells (-1) are skipped
+			def getNeighBours(row, col){
+				def res := [];
+				// get all neigbours from row above
+				if: ((row - 1) >= 1) then: {
+					if: ((col - 1) >= 1) then: {
+						res := res + [pb.getCell((row - 1), (col - 1))];
+					};
+					res := res + [pb.getCell((row - 1), col)];
+					if: ((col + 1) <= cols) then: {
+						res := res + [pb.getCell((row - 1), (col + 1))];
+					};
+				};
+				// get all neigbours from same row
+				if: ((col - 1) >= 1) then: {
+					res := res + [pb.getCell(row, (col - 1))];
+				};
+				if: ((col + 1) <= cols) then: {
+					res := res + [pb.getCell(row, (col + 1))];
+				};
+				// get all neigbours from row underneath
+				if: ((row + 1) <= rows) then: {
+					if: ((col - 1) >= 1) then: {
+						res := res + [pb.getCell((row + 1), (col - 1))];
+					};
+					res := res + [pb.getCell((row + 1), col)];
+					if: ((col + 1) <= cols) then: {
+						res := res + [pb.getCell((row + 1), (col + 1))];
+					};
+				};
+				
+				res;
+			};
+			def getLiveNeighBours(row, col){
+				getNeighBours(row, col).filter:{|cell| cell != -1};
+			};
+			
+			def resPB := playBoard.new(pb.getColLength(), pb.getRowLength());
+			def rowIter := 1;
+			while: {rowIter <= pb.getColLength()} do: {
+				def colIter := 1;
+				while: {colIter <= pb.getRowLength()} do: {
+					def currCell := pb.getCell(rowIter, colIter);
+					def liveNeighBours := getLiveNeighBours(rowIter, colIter);
+					def noOfLiveNeighBours := liveNeighBours.length();
+					
+					if: (currCell != -1) then:{// currCell is alive
+						if: (noOfLiveNeighBours < 2) then:{}// cell dies -> nothing to put in resPB
+						else: {
+							if: (noOfLiveNeighBours <= 3) then: { // 2 or three neighbours -> stayalive
+								resPB.placeCell(currCell, rowIter, colIter);
+							}
+							else: {};// noOfLiveNeighBours > 3 -> die (overcrowding)
+							};
+					}
+					else: {// currCell is dead
+						if:(noOfLiveNeighBours == 3) then: {// Dead cell comes alive
+							def newCell;
+							// Detecting majority
+							def plyrs := [];
+							plyrs := plyrs + [liveNeighBours.at(1).owner];
+							if:(plyrs.contains(liveNeighBours.at(2).owner)) then: {
+								// majority [[X][X][0]]
+								newCell := cell.new(liveNeighBours.at(2));
+							}
+							else: {
+								plyrs := plyrs + [liveNeighBours.at(2).owner];
+								if:(plyrs.contains(liveNeighBours.at(3).owner)) then: {
+									// majority [[X][0][X]] or [[0][X][X]]
+									newCell := cell.new(liveNeighBours.at(3));
+								}
+								else: { // no majority -> random draw
+									def winner := /.at.support.util.randomNumberBetween(1,4); // returns 1, 2 or 3
+									newCell := cell.new(liveNeighBours.at(winner));
+								};
+							};
+							resPB.placeCell(newCell, rowIter, colIter);
+						}
+						else: {}; // Cells stays dead
+						};
+					colIter := colIter + 1;
+				};
+				rowIter := rowIter + 1;
+			};
+			resPB;
+		};
 	};
 	// TEST
 	def c1 := cell.new("you");
@@ -141,12 +230,15 @@ object:{
 	pb2.placeCell(c3, 1,2);
 	def m := merge(pb1, pb2);
 	
+	system.println("pb1");
 	pb1.prettyPrint();
-	system.println(" ");
+	system.println("pb2");
 	pb2.prettyPrint();
-	system.println(" ");
+	system.println("merge");
 	m.at(1).prettyPrint();
-	system.println(" ");
-	system.println(""+ m.at(2) + " " + m.at(3));
+	system.println("nextIter");
+	def c := computeNextGen(m.at(1));
+	c.prettyPrint();
+
 
 };
