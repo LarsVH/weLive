@@ -217,7 +217,7 @@ object:{
 		};
 	};
 	// TEST
-	def c1 := cell.new("you");
+/*	def c1 := cell.new("you");
 	def pb1 := playBoard.new(3,3);
 	def pb2 := playBoard.new(3,3);
 	def c2 := cell.new("me");
@@ -238,7 +238,6 @@ object:{
 	m.at(1).prettyPrint();
 	system.println("nextIter");
 	def c := computeNextGen(m.at(1));
-	c.prettyPrint();
-
+	c.prettyPrint(); */
 
 };

@@ -3,7 +3,8 @@ object:{
 		def ID;
 		def board;
 		def players;
-		def endTime;		
+		def endTime;
+	
 		
 		def init(sessionID, playBoard, plyrs, endTm){
 			ID := sessionID;

@@ -20,7 +20,6 @@ object:{
 			parent.currSession.ID;
 		};
 		def getSession(){
-			system.println("DEBUG -- SessionRequest");
 			parent.currSession;
 		};
 		def getStatus(){
@@ -96,6 +95,9 @@ object:{
 			// TODO
 
 			// TODO: GUI: ResumeSession
+		};
+		def addCells(noOfCells){
+			// TODO: add noOfCells to Cellbank
 		};
 	};
 };

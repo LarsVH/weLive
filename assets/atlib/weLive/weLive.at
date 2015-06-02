@@ -44,12 +44,14 @@ def makeWeLive(){
 		def local := weLiveLocalInterface.new(self);
 		def remote := weLiveRemoteInterface.new(self);
 		
-		// session.init(sessionID, playBoard, plyrs, endTm)
+		// session.init(sessionID, playBoard, plyrs, endTm, ownerID)
 		def currSession := session.new(-1, nil, iterMap.new(), nil);
 		
 		// Export/discover peers
 		def goOnline() {
 			export: remote as: Player;
+			
+			def leaderFound := false;
 			def detectOtherPlayers(time){
 				system.println("INFO -- Start detecting other players for " + time + "s");
 				// GUI output: scanning for other Players
@@ -61,46 +63,48 @@ def makeWeLive(){
 						def statusRequests := group: currOnlinePlayers.map({|plyr| plyr<-getStatus()@FutureMessage});
 						when: statusRequests becomes: { |statusses|
 							system.println("INFO -- Statusrequests: " + statusRequests);
-							def currpos := 1;
-							def leaderFound := false;
+							def currpos := 1;							
 							if: (leader != nil) then: {leaderFound := true;}; // FIXME: dirty hack to prevent not detecting to be a leader yourself
 							def nonInitFound := false;
 							{|Q|
 								// Check if a leader already exists
 								statusses.each:{ |plyrstatus|
-									if: (plyrstatus != "init") then: {
-										nonInitFound := true;
-										def plyr := currOnlinePlayers.at(currpos);
-										def plyrleaderID := plyr<-getLeader()@FutureMessage;
-										when: plyrleaderID becomes: { |leaderID|
-											if:(leaderID == nil) then: {
-												// This player does not have a leader yet -> this is a joiner (because his status != init)
-												// ignore
-												}
-											else: {
-												// Check if we already discovered the leader
-												if:(players.contains(leaderID)) then: {
-													def remLeader := players.get(leaderID);
-													// Send joinrequest to discovered leader
-													joinRequest(ID, onlinePlayers.get(leader), currSession);// -1 = we did not play a session before
-													status := "joining";
-													system.println("INFO -- JoinRequest sent to leader (" + leaderID + ")");
-													leaderFound := true;
-													Q();
-												}
+									if: (!leaderFound) then: {
+										if: (plyrstatus != "init") then: {
+											nonInitFound := true;
+											def plyr := currOnlinePlayers.at(currpos);
+											def plyrleaderID := plyr<-getLeader()@FutureMessage;
+											when: plyrleaderID becomes: { |leaderID|
+												if:(leaderID == nil) then: {
+													// This player does not have a leader yet -> this is a joiner (because his status != init)
+													// ignore
+													}
 												else: {
-													system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
-													// XXX: intussen waarschijnlijk wel al gevonden <<<<<<<<<<<<<<<
-													};
+													// Check if we already discovered the leader
+													if:(onlinePlayers.contains(leaderID)) then: {// we already discovered the leader
+														def remLeader := players.get(leaderID);
+														// Send joinrequest to discovered leader
+														joinRequest(ID, remLeader, currSession);//we did not play a session before
+														status := "joining";
+														system.println("INFO -- JoinRequest sent to leader (" + leaderID + ")");
+														leaderFound := true;
+														leader := leaderID;
+														//Q();
+													}
+													else: {
+														system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
+														// XXX: intussen waarschijnlijk wel al gevonden <<<<<<<<<<<<<<<
+														};
+												};
+											}
+											catch: { |e|
+												system.println("EXCEPT -- getLeader -- " + e);
 											};
 										}
-										catch: { |e|
-											system.println("EXCEPT -- getLeader -- " + e);
-										};
-									}
-									else: {};
-									currpos := currpos +1;
-								};
+										else: {};
+										currpos := currpos +1;
+									} else: {};// leader found -> done;
+									};
 							}.escape();
 							
 							if:((!leaderFound).and:{nonInitFound}) then: {// No leader found, although a peer with status non-init has been found
@@ -169,7 +173,7 @@ def makeWeLive(){
 			players.map({|plyr|
 				plyr<-resumeSession(currSession)@OneWay;});
 			remote.resumeSession(currSession);// resuming ourselves
-			};		
+			};
 		
 		
 		// New leader
@@ -217,9 +221,11 @@ def makeWeLive(){
 								sessionPlayers.put(kv.at(1), kv.at(2));
 								kv;// mapkv requires a return value
 								});
+							joinPlayers := iterMap.new();// clear joinPlayers map
 							startBoard := playBoard.new(rows, cols);
 							startNewGame(startBoard, sessionPlayers);
 						};
+						// TODO
 						else: { // A game already exists, continue with it
 							def boardFut;
 							if: (!(highestSessionID < currSession.ID)) then: {// Someone else has a higher sessionID -> request his startboard
@@ -247,9 +253,9 @@ def makeWeLive(){
 				};
 			}
 			else: { // Someone else is new leader
-					sessionPlayers := iterMap.new();	// no leader -> do not keep track of sessionPlayers -> clear				
+				sessionPlayers := iterMap.new();// no leader -> do not keep track of sessionPlayers -> clear
 				};
-			};
+		};
 		
 		// End-of-Session callback
 		def sessionOver(session){
@@ -257,14 +263,27 @@ def makeWeLive(){
 			if: (leader == ID) then: {
 				when: leaderMarginTime elapsed: {// safety margin (prevent errors caused by connections delays)
 					def sessionsFut := group: session.players.map({|plyr|
-						system.println("DEBUG -- sessionplayer: " + plyr);
 						plyr<-getSession()@FutureMessage;
 					});
 					when: sessionsFut becomes: {|sessions|
 						system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
-						// TODO merge
-						}
-					// we have to retrieve all playboards
+						def merged := [currSession.board];// start merging with our playboard
+						sessions.each:{|session|
+							merged := merge(merged.at(1), session.board);
+							// cellsLost1 := merged.at(2);// not taken into account in this version of the game
+							// cellsLost2 := merged.at(3);
+							};
+						def mergedSession := merged.at(1);
+						// merge joiners in sessionPlayers
+						joinPlayers.mapkv({ |kv|
+							sessionPlayers.put(kv.at(1), kv.at(2));
+							kv;// mapkv requires a return value
+							});
+						joinPlayers := iterMap.new();
+						def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedSession), sessionPlayers, (now() + sessionDurationMillis));
+						sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
+						remote.startSession(nextSession);
+					};
 					// merge playboards
 					// include joiners
 					// make new session object (id + 1)
@@ -272,8 +291,11 @@ def makeWeLive(){
 
 				};
 			}
-			else:{}; // Leaderwill retrieve our sessionobject
-
+			// Leaderwill retrieve our sessionobject
+			// Wait for next session to start
+			else:{// GUI: wait for next session
+				}; 
+		
 		};
 	
 	
