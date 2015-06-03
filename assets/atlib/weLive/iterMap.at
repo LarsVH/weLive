@@ -1,7 +1,7 @@
 // Keeping a hashmap and an AmbientTalk table consistent
 // Aim: Avoiding to iterate over a Java Hashmap while keeping its advantages
 object:{
-	def iterMap := object: {
+	def iterMap := isolate: {
 		def hashMap;
 		def table;
 		

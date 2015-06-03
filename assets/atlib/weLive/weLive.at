@@ -12,7 +12,7 @@ import /.at.support.timer;
 def rows := 6;
 def cols := 4;
 def playerDetectionTime := seconds(5);
-def sessionDurationMillis := seconds(10);
+def sessionDurationMillis := seconds(5);
 def sessionResumeMillis := seconds(10);
 def leaderMarginTime := seconds(2);
 
@@ -44,8 +44,8 @@ def makeWeLive(){
 		def local := weLiveLocalInterface.new(self);
 		def remote := weLiveRemoteInterface.new(self);
 		
-		// session.init(sessionID, playBoard, plyrs, endTm, ownerID)
-		def currSession := session.new(-1, nil, iterMap.new(), nil);
+		// session.init(sessionID, playBoard, plyrs, endTm)
+		def currSession := session.new(-1, playBoard.new(rows,cols), iterMap.new(), nil);
 		
 		// Export/discover peers
 		def goOnline() {
@@ -199,11 +199,11 @@ def makeWeLive(){
 							 highestSession := session;
 						 };
 					 };
-					def hsPlayers := highestSession.players();// hsPlayers == higest session players (a table)
+					def hsPlayers := highestSession.players;// hsPlayers == higest session players (iterMap)
+
 					if:(hsPlayers.length() > 0) then: {
 						sessionPlayers := iterMap.new(); // make sure sessionPlayers is empty
-						hsPlayersCopy := hsPlayers.deepCopy();
-						hsPlayersCopy.mapkv({|kv|
+						hsPlayers.mapkv({|kv|
 							if:(onlinePlayers.contains(kv.at(1))) then:{
 								sessionPlayers.put(kv.at(1), kv.at(2));
 							}
@@ -249,20 +249,22 @@ def makeWeLive(){
 						});
 						when: sessionsFut becomes: {|sessions|
 							system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
-							def merged := [currSession.board];// start merging with our playboard
+							def merged := [currSession.board];// start merging with our playboard // [mergedBoards, cellslost1, cellslost2]
+							system.println("DEBUG -- currSession.board: " + currSession.board);
 							sessions.each:{|session|
 								merged := merge(merged.at(1), session.board);
 								// cellsLost1 := merged.at(2);// not taken into account in this version of the game
 								// cellsLost2 := merged.at(3);
 								};
-							def mergedSession := merged.at(1);
+							system.println("DEBUG -- merged: " + merged);
+							def mergedBoard := merged.at(1);
 							// merge joiners in sessionPlayers
 							joinPlayers.mapkv({ |kv|
 								sessionPlayers.put(kv.at(1), kv.at(2));
 								kv;// mapkv requires a return value
 								});
 							joinPlayers := iterMap.new();
-							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedSession), sessionPlayers, (now() + sessionDurationMillis));
+							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedBoard), sessionPlayers, (now() + sessionDurationMillis));
 							sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
 							remote.startSession(nextSession);
 						};
@@ -284,14 +286,16 @@ def makeWeLive(){
 	};
 };
 // 
-def broadcastRequestPeerElection(game, oldLeader){
+def broadcastRequestPeerElection(game, oldLeader){	// TODO: else case aanpassen (moet ook werken als oldLeader offline gaat)
 	if: (oldLeader == game.ID) then: {
 		game.onlinePlayers.map({|plyr|
 		plyr<-requestPeerElection(oldLeader)@OneWay
 		});
 	}
 	else: {
-		system.prinln("ERROR -- Can't request peer election if self != leader");
+		// TODO: laat dit zo (verwijder de ERROR) -> het is onnodig dat alle actors een peerelection request broadcasten (leader doe dit zelf al)
+		// LET OP: wel nodig als de leader offline gaat: voozie een check
+		system.println("TODO (WARNING) (TODO)-- Can't request peer election if self != leader");
 	};
 };
 
