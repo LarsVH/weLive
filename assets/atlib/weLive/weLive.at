@@ -315,7 +315,7 @@ def makeWeLive(){
 								});
 							def sessionPlayersMe := sessionPlayers.deepCopy();
 							sessionPlayersMe.put(ID, remote); // send yourself together with the sessionobject
-							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedBoard), sessionPlayersMe, (now() + sessionDurationMillis));
+							def nextSession := session.new((session.ID + 1), computeNextGen(mergedBoard), sessionPlayersMe, (now() + sessionDurationMillis));
 							sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
 							remote.startSession(nextSession);
 						};
