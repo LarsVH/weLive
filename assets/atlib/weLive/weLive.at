@@ -169,10 +169,6 @@ def makeWeLive(){
 				if: (sessionPlayers.contains(plyrID)) then: {sessionPlayers.remove(plyrID);};
 				if: (joinPlayers.contains(plyrID)) then: {joinPlayers.remove(plyrID);};
 				
-				// AAN HET EINDE VAN ELKE SESSIE WORDT AUTOMATISCH AL GEVERIFIEERD OF ER GEEN NIEUWE LEIDER MOET ZIJN
-				// TODO: onderstaande mag normaal gezien weg (TO TEST)
-				
-				
 				// GUI: Player DISCONNECTED --> GRAY OUT CELLS
 				// TODO: hoe weten dat je zelf disconnected bent
 				};
