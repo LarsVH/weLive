@@ -30,7 +30,13 @@ object:{
 		};		
 		def remove(key){
 			def value := hashMap.remove(key);
-			table := table.filter:{|e| e != value};
+			def iter := hashMap.entrySet().iterator();
+			table := [];
+			while:{iter.hasNext()} do: {
+				def kvpair := iter.next();
+				table := table + [kvpair.getValue()];
+			};
+			//table := table.filter:{|e| e != value};
 			value;
 		};
 		def getHashMap(){

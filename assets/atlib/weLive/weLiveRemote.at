@@ -89,9 +89,7 @@ object:{
 			
 		};
 		def resumeSession(session){
-			// TODO
-
-			// TODO: GUI: ResumeSession
+			// DEPRECATED
 		};
 		def addCells(noOfCells){
 			// TODO: add noOfCells to Cellbank

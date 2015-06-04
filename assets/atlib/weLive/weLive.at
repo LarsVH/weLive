@@ -171,14 +171,7 @@ def makeWeLive(){
 				
 				// AAN HET EINDE VAN ELKE SESSIE WORDT AUTOMATISCH AL GEVERIFIEERD OF ER GEEN NIEUWE LEIDER MOET ZIJN
 				// TODO: onderstaande mag normaal gezien weg (TO TEST)
-				if: (leader == plyrID) then: {// leader disconnected
-					system.println("TODO -- Leader (" + plyrID + ") went offline, broadcasting peerelectionrequest");
-					//broadcastRequestPeerElection(self, leader, true);// game; oldLeader, oldLeaderOffline // DEPRECATED
-					remote.requestPeerElection(ID);
-				};
 				
-				else: {
-				};
 				
 				// GUI: Player DISCONNECTED --> GRAY OUT CELLS
 				// TODO: hoe weten dat je zelf disconnected bent
