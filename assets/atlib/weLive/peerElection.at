@@ -13,7 +13,7 @@ object:{
 			{|break|
 				// Loop over all IDs to check whether our ID is highest
 				playerIDs.each:{|remPlyrID|
-					if:(IDsmaller(myID, remPlyrID)) then: {
+					if:(IDsmaller(highestID, remPlyrID)) then: {
 						// No possibility to become leader
 						system.println("INFO -- myID (" + myID + ") < RemoteID (" + remPlyrID + ") -> cannot become leader");
 						highestID := remPlyrID;
