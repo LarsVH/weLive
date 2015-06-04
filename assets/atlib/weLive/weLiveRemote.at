@@ -29,9 +29,6 @@ object:{
 			parent.leader;
 		};
 		def requestJoin(joinID, session){
-			// TODO: Check of request niet van jezelf
-			if: (parent.leader == parent.ID) then: {
-				system.println("INFO -- New Joiner -- joinID: " + joinID + " -- session:" + session);
 				def joiner := parent.onlinePlayers.get(joinID);
 				if: (parent.sessionPlayers.contains(joinID)) then: {
 					system.println("WARNING -- joiner (" + joinID + ") already in-game");
@@ -39,26 +36,27 @@ object:{
 					// this case can happen when init code is not finished when game already started
 				}
 				else: {
+				system.println("INFO -- new joiner (" + joinID + "), adding him to joinPlayers");
 				parent.joinPlayers.put(joinID, joiner);
-				};
-				true; 
-				}
-			else: {
-				system.println("ERROR -- RemoteFacade -- " + joinID + " wants to join, while me not leader");
-				false;
 				};
 		};
 		def requestLeaderShip(remoteID){
-			if: (IDsmaller(remoteID, parent.ID)) then: {
-				system.println("WARNING -- requestLeaderShip -- remoteID (" + remoteID + ") smaller than MyID (" + parent.ID + ")");
+			if: (remoteID != parent.leader) then: {					
+				if: (IDsmaller(remoteID, parent.ID)) then: {
+					system.println("DANGER! -- requestLeaderShip -- remoteID (" + remoteID + ") smaller than MyID (" + parent.ID + ")");
+				}
+				else: {
+					system.println("INFO -- INBOUND requestLeaderShip -- new Leader: " + remoteID);
+				};
+				parent.onNewLeader(remoteID);
 			}
 			else: {
-				system.println("INFO -- INBOUND requestLeaderShip -- new Leader: " + remoteID);
+				system.println("INFO -- requestLeaderShip: " + remoteID + " already leader, ignoring");
 			};
-			parent.onNewLeader(remoteID);
+			
 		};
 		def requestPeerElection(remoteLeader) {
-			system.println("INFO -- Peer Election requested by: " + remoteLeader);
+			system.println("INFO -- Peer Election requested. Old leader:" + remoteLeader);
 			parent.status := "electing";
 			def snapOnlinePlayers := parent.onlinePlayers.deepCopy();
 			def newLeader := peerElection(parent, snapOnlinePlayers);
@@ -67,13 +65,12 @@ object:{
 				system.println("INFO -- I (" + parent.ID + ") am new leader, broadcasting leadershiprequests");
 				snapOnlinePlayers.map({|plyr|
 					plyr<-requestLeaderShip(parent.ID)@OneWay // no return value required
-					});
-				parent.onNewLeader(newLeader);
+					});				
 			}
 			else:{
 				system.println("INFO -- We (" + parent.ID + ") do not become leader; new Leader is: " + newLeader);
 			};
-			
+			parent.onNewLeader(newLeader);
 		};
 		def startSession(session){
 			system.println("INFO -- INBOUND -- StartSession, sessionID:" + session.ID);
