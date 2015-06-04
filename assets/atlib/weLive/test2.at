@@ -1,0 +1,30 @@
+import /.at.lang.futures exclude seconds,minutes,millisec;
+import /.at.support.timer;
+
+deftype Testy;
+def makeMe() {
+	object: {
+		def discovered := [];
+		
+		def rem := object: {
+			def testfunc(x) {
+				system.println("tesfunc opgeroepen");
+			};
+		};
+		def testOb
+		export: rem as: Testy;
+		
+		def ref := createReference(rem);
+		
+		whenever: Testy discovered: { |tt|
+			discovered := discovered + [tt];
+			tt<-
+		};
+		
+		when: seconds(2) elapsed: {
+			ref<-testfunc(5);
+		};
+	
+	};
+};
+makeMe();

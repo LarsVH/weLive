@@ -9,7 +9,7 @@ object:{
 		if: (game.status != "init") then: {
 			def playerIDs := snapOnlinePlayers.getKeys();// get all playerIDs from snapOnlinePlayers
 			def highestID := myID;
-			system.println("DEBUG -- Playerids: " + playerIDs);
+			system.println("DEBUG -- peerElection -- Playerids: " + playerIDs);
 			{|break|
 				// Loop over all IDs to check whether our ID is highest
 				playerIDs.each:{|remPlyrID|

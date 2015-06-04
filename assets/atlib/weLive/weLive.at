@@ -94,7 +94,11 @@ def makeWeLive(){
 													else: {
 														if: (leaderID == ID) then:{// Other players have already elected me leader
 															system.println("INFO -- Other players have already elected me (" + ID + ") to be leader");
+															if: (!leaderFound) then:{															
+															leaderFound := true;
+															leader := ID;
 															onNewLeader(leaderID);
+															};
 														}
 														else: {
 															system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
@@ -190,11 +194,13 @@ def makeWeLive(){
 		
 		// Helpfunctions for onNewLeader()
 		//---------------------------------------
-		def startNewGame(stBoard, players) {
+		def startNewGame(stBoard, remotePlayers) {
 			system.println("INFO -- (Leader) Starting game");
 			def endTime := now() + sessionDurationMillis; // add 10 seconds for the endTime
-			currSession := session.new(1, stBoard, players,endTime);
-			players.map({|plyr|
+			def remoteMePlayers := remotePlayers.deepCopy();
+			remoteMePlayers.put(ID, remote);	// (TO CHECK) reference to self (our own remote interface
+			currSession := session.new(1, stBoard, remoteMePlayers, endTime);
+			remotePlayers.map({|plyr|
 				plyr<-startSession(currSession)@OneWay;});
 			remote.startSession(currSession);// starting ourselves
 			};
@@ -307,7 +313,9 @@ def makeWeLive(){
 								sessionPlayers.put(kv.at(1), kv.at(2));
 								kv;// mapkv requires a return value
 								});
-							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedBoard), sessionPlayers, (now() + sessionDurationMillis));
+							def sessionPlayersMe := sessionPlayers.deepCopy();
+							sessionPlayersMe.put(ID, remote); // send yourself together with the sessionobject
+							def nextSession := session.new((currSession.ID + 1), computeNextGen(mergedBoard), sessionPlayersMe, (now() + sessionDurationMillis));
 							sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
 							remote.startSession(nextSession);
 						};
