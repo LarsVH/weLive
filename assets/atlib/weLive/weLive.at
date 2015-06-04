@@ -12,6 +12,7 @@ import /.at.support.timer;
 def rows := 6;
 def cols := 4;
 def playerDetectionTime := seconds(5);
+def playerReconnectDetectionTime := seconds(1);
 def sessionDurationMillis := seconds(5);
 def sessionResumeMillis := seconds(10);
 def leaderMarginTime := seconds(2);
@@ -94,10 +95,10 @@ def makeWeLive(){
 													else: {
 														if: (leaderID == ID) then:{// Other players have already elected me leader
 															system.println("INFO -- Other players have already elected me (" + ID + ") to be leader");
-															if: (!leaderFound) then:{															
-															leaderFound := true;
-															leader := ID;
-															onNewLeader(leaderID);
+															if: (!leaderFound) then:{
+																leaderFound := true;
+																leader := ID;
+																onNewLeader(leaderID);
 															};
 														}
 														else: {
@@ -148,6 +149,7 @@ def makeWeLive(){
 			detectOtherPlayers(playerDetectionTime);
 			
 			// DISCOVERY
+			//-----------------------------------------------------------
 			whenever: Player discovered: {|plyr|
 				when: plyr<-getID()@FutureMessage becomes: { |remoteID|
 					players.put(remoteID, plyr);
@@ -162,6 +164,7 @@ def makeWeLive(){
 				};
 			};
 			// Disconnect/Reconnect Callbacks
+			//-----------------------------------------------------------
 			def playerDisconnected(plyrID, plyrRef) {
 				system.println("WARNING -- Player (" + plyrID + ") disconnected");
 				onlinePlayers.remove(plyrID);
@@ -169,14 +172,38 @@ def makeWeLive(){
 				if: (sessionPlayers.contains(plyrID)) then: {sessionPlayers.remove(plyrID);};
 				if: (joinPlayers.contains(plyrID)) then: {joinPlayers.remove(plyrID);};
 				
+				// Check if we are the one that went offline
+				offlineCheck();
+				
 				// GUI: Player DISCONNECTED --> GRAY OUT CELLS
-				// TODO: hoe weten dat je zelf disconnected bent
 				};
+			def offlineCheck(){
+				if: (onlinePlayers.length <= 0) then: {
+					onSelfOffline();
+				};
+			};
+			def onSelfOffline(){
+				system.println("INFO -- We (" + ID + ") are offline ");
+				leader := nil;// invalidate leader
+				status := "offline";
+			
+			};
+			
 			def playerReconnected(plyrID, plyrRef) {
-				system.println("WARNING -- Player (" + plyrID + ") reconnected");
+				system.println("INFO -- Player (" + plyrID + ") reconnected");
 				onlinePlayers.put(plyrID, plyrRef);
-				// TODO
+				if: (status == "offline") then: {
+					system.println("INFO -- We (" + ID + ") are back online");
+					onSelfOnline();
+				};
+				
+				// TODO: neem de speler weer op in het spel
 				// GUI: reactivate cells
+				};
+			def onSelfOnline() {
+				status := "init";
+				detectOtherPlayers(seconds(0));
+				//detectOtherPlayers(playerReconnectDetectionTime);// TO CHECK
 				};
 		};
 		goOnline();
@@ -187,7 +214,7 @@ def makeWeLive(){
 			system.println("INFO -- (Leader) Starting game");
 			def endTime := now() + sessionDurationMillis; // add 10 seconds for the endTime
 			def remoteMePlayers := remotePlayers.deepCopy();
-			remoteMePlayers.put(ID, remote);	// (TO CHECK) reference to self (our own remote interface
+			remoteMePlayers.put(ID, remote);// (TO CHECK) reference to self (our own remote interface
 			currSession := session.new(1, stBoard, remoteMePlayers, endTime);
 			remotePlayers.map({|plyr|
 				plyr<-startSession(currSession)@OneWay;});
@@ -268,59 +295,69 @@ def makeWeLive(){
 		
 		// End-of-Session callback
 		def sessionOver(session){
-			status := "endOfSession";
-			def highestID := ID;// start with yourself (in case the leader went offline)
-			onlinePlayers.mapkv({|kv|
-				if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
-				kv;});
-			joinPlayers.mapkv({|kv|
-				if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
-				kv;});
-			if: (highestID != leader) then: {// leader cannot longer be leader
-				sessionPlayers := iterMap.new();
-				//broadcastRequestPeerElection(self, leader);
-				system.println("DEBUG -- oldLeader (" + leader + ") cannot longer be leader: higherID (" + highestID + ") detected");
-				remote.requestPeerElection(leader);//OK: enkel lokaal peer electen (aangezien alle actors dit doen -> geen nood om extra bericht rond te sturen)
-				} 
+			if: (status == "offline") then: {
+				system.println("INFO -- End of Session -- We are offline -- Waiting for reconnection");
+			}
 			else: {
-				if: (leader == ID) then: {
-					when: leaderMarginTime elapsed: {// safety margin (prevent errors caused by connections delays)
-						def sessionsFut := group: session.players.map({|plyr|
-							plyr<-getSession()@FutureMessage;
-						});
-						when: sessionsFut becomes: {|sessions|
-							system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
-							def merged := [currSession.board];// start merging with our playboard // [mergedBoards, cellslost1, cellslost2]
-							sessions.each:{|session|
-								merged := merge(merged.at(1), session.board);
-								// cellsLost1 := merged.at(2);// not taken into account in this version of the game
-								// cellsLost2 := merged.at(3);
+				status := "endOfSession";
+				def highestID := ID;// start with yourself (in case the leader went offline)
+				onlinePlayers.mapkv({|kv|
+					if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
+					kv;});
+				joinPlayers.mapkv({|kv|
+					if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
+					kv;});
+				if: (highestID != leader) then: {// leader cannot longer be leader
+					sessionPlayers := iterMap.new();
+					//broadcastRequestPeerElection(self, leader);
+					system.println("DEBUG -- oldLeader (" + leader + ") cannot longer be leader: higherID (" + highestID + ") detected");
+					remote.requestPeerElection(leader);//OK: enkel lokaal peer electen (aangezien alle actors dit doen -> geen nood om extra bericht rond te sturen)
+					} 
+				else: {
+					if: (leader == ID) then: {
+						when: leaderMarginTime elapsed: {// safety margin (prevent errors caused by connections delays)
+							def sessionsFut := group: session.players.map({|plyr|
+								plyr<-getSession()@FutureMessage;
+							});
+							when: sessionsFut becomes: {|sessions|
+								system.println("INFO -- leader (" + ID + ") -- retrieved all sessionobjects, starting merge");
+								def merged := [currSession.board];// start merging with our playboard // [mergedBoards, cellslost1, cellslost2]
+								sessions.each:{|session|
+									if: (session.ID < currSession.ID) then: {
+										merged := merge(merged.at(1), session.board, false);
+									}
+									else: {
+										merged := merge(merged.at(1), session.board);
+										// cellsLost1 := merged.at(2);// not taken into account in this version of the game
+										// cellsLost2 := merged.at(3);
+										};
 								};
-							def mergedBoard := merged.at(1);
-							// merge joiners in sessionPlayers
-							joinPlayers.mapkv({ |kv|
-								sessionPlayers.put(kv.at(1), kv.at(2));
-								kv;// mapkv requires a return value
-								});
-							def sessionPlayersMe := sessionPlayers.deepCopy();
-							sessionPlayersMe.put(ID, remote); // send yourself together with the sessionobject
-							def nextSession := session.new((session.ID + 1), computeNextGen(mergedBoard), sessionPlayersMe, (now() + sessionDurationMillis));
-							sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
-							remote.startSession(nextSession);
-						};
-						// merge playboards
-						// include joiners
-						// make new session object (id + 1)
-						// start new session
+								def mergedBoard := merged.at(1);
+								// merge joiners in sessionPlayers
+								joinPlayers.mapkv({ |kv|
+									sessionPlayers.put(kv.at(1), kv.at(2));
+									kv;// mapkv requires a return value
+									});
+								def sessionPlayersMe := sessionPlayers.deepCopy();
+								sessionPlayersMe.put(ID, remote); // send yourself together with the sessionobject
+								def nextSession := session.new((session.ID + 1), computeNextGen(mergedBoard), sessionPlayersMe, (now() + sessionDurationMillis));
+								sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
+								remote.startSession(nextSession);
+							};
+							// merge playboards
+							// include joiners
+							// make new session object (id + 1)
+							// start new session
 
-					};
-				}
-				// Leaderwill retrieve our sessionobject
-				// Wait for next session to start
-				else:{// GUI: wait for next session
-					joinPlayers := iterMap.new();// clear all joiners for this session
-					}; 				
+						};
+					}
+					// Leaderwill retrieve our sessionobject
+					// Wait for next session to start
+					else:{// GUI: wait for next session
+						joinPlayers := iterMap.new();// clear all joiners for this session
+						}; 
 				};
+			};
 		};
 	};
 };

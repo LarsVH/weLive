@@ -15,7 +15,11 @@ object:{
 		def olderThan(cell2) {
 			if:((birthTime < cell2.birthTime).or:{birthTime == cell2.birthTime}) then: {true;}
 			else: {false;};
-		}
+		};
+		def youngerThan(cell2) {
+			if:((birthTime > cell2.birthTime).or:{birthTime == cell2.birthTime}) then: {true;}
+			else: {false;};
+		};
 	};
 	// Motivation to make it an isolate
 	// - Not 'that' much data to copy
@@ -79,7 +83,7 @@ object:{
 	};
 	// Conflict? -> the oldest cell stays alive
 	// Returns: [merged playboard, cells deleted pb1, cells deleted pb2]
-	def merge(pb1, pb2){// TODO: TESTME
+	def merge(pb1, pb2, compareOlder := true){
 		if: ((pb1 == nil).or:{pb2 == nil}) then: {system.println("ERROR -- merge -- pb1 or pb2 == nil")}
 		else: {
 			if:((pb1.getRowLength() == pb2.getRowLength()).and:{pb1.getColLength() == pb2.getColLength()}) then:{
@@ -104,13 +108,26 @@ object:{
 							else:{
 								// both cells exist
 								// Cell1 older (or equally old) than cell2 -> cell1 survives
-								if: (cell1.olderThan(cell2)) then: {
-									res.placeCell(cell1, rowIter, colIter);
-									cellsRemoved2 := cellsRemoved2 + [cell2];
+								if: (compareOlder) then: {
+									if: (cell1.olderThan(cell2)) then: {
+										res.placeCell(cell1, rowIter, colIter);
+										cellsRemoved2 := cellsRemoved2 + [cell2];
+									}
+									else: {
+										res.placeCell(cell2, rowIter, colIter);
+										cellsRemoved1 := cellsRemoved1 + [cell1];
+									};
 								}
+								// Design flaw: giving a "cellcompare" function as argument to merge would be better
 								else: {
-									res.placeCell(cell2, rowIter, colIter);
-									cellsRemoved1 := cellsRemoved1 + [cell1];
+									if: (cell1.youngerThan(cell2)) then: {
+										res.placeCell(cell1, rowIter, colIter);
+										cellsRemoved2 := cellsRemoved2 + [cell2];
+									}
+									else: {
+										res.placeCell(cell2, rowIter, colIter);
+										cellsRemoved1 := cellsRemoved1 + [cell1];
+									}
 								};
 							};
 						};
