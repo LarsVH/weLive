@@ -76,6 +76,7 @@ def makeWeLive(){
 											def plyr := currOnlinePlayers.at(currpos);
 											def plyrleaderID := plyr<-getLeader()@FutureMessage;
 											when: plyrleaderID becomes: { |leaderID|
+												system.println("DEBUG -- Got leader (" + leaderID + ")");
 												if:(leaderID == nil) then: {
 													// This player does not have a leader yet -> this is a joiner (because his status != init)
 													// ignore
