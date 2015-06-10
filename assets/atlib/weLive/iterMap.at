@@ -84,12 +84,5 @@ object:{
 			res.table := table;
 			res;
 		};
-		def test(){
-			def a := self.new();
-			a.put(1, "a");
-			a.put(2, "b");
-			a.put(63, "c");
-			a;
-		};
 	};
 };

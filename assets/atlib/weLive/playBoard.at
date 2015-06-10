@@ -2,20 +2,25 @@ import /.at.support.timer;
 
 object:{
 	def cell := isolate: {
+		// ID of the creator of the cell
 		def owner;
+		// Timestamp at which the cell has been created
 		def birthTime;
 		
 		def init(ownr, birthTm := jlobby.java.lang.System.currentTimeMillis()){
 			owner := ownr;
 			birthTime := birthTm;
 		};
+		// Making a deepCopy of ourselves
 		def deepCopy(){
 			self.new(owner, birthTm);
 		};
+		// Takes another cell and checks if self is older
 		def olderThan(cell2) {
 			if:((birthTime < cell2.birthTime).or:{birthTime == cell2.birthTime}) then: {true;}
 			else: {false;};
 		};
+		// Takes another cell and checks if self is younger
 		def youngerThan(cell2) {
 			if:((birthTime > cell2.birthTime).or:{birthTime == cell2.birthTime}) then: {true;}
 			else: {false;};
@@ -25,8 +30,11 @@ object:{
 	// - Not 'that' much data to copy
 	// - Time restrictions (a session is only played during a certain amount of time). Delays caused by futures cannot be tolerated
 	def playBoard := isolate: {
-		def board := [];// Structure: One table represents all rows. Each row contains another table of length == cols
-
+		// The board itself
+		// Structure: One table represents all rows. Each row contains another table of length == cols
+		def board := [];
+		
+		// Create a new playBoard with 'rows' = no. of rows, 'cols' = no. of columns
 		def init(rows, cols) {
 			def rowit := rows;
 			def colit;
@@ -49,6 +57,7 @@ object:{
 		def getColLength(){
 			board.length();
 		};
+		// Place a cell 'cell' at row 'row' and column 'col'
 		def placeCell(cell, row, col) {
 			if: (board != []) then: {
 				board.at(row).atPut(col, cell);
@@ -64,15 +73,18 @@ object:{
 				-1;
 			};
 		};
+		// Clear the board
 		def clear(){
 			def rows := board.length();
 			def cols := board.at(1).length();
 			board := [];
 			init(rows, cols);
 		};
+		// Remove a cell at row 'row' and column 'col'
 		def removeCell(row, col){
 			board.at(row).atPut(col, -1);
 		};
+		// Print out the playboard in console format
 		def prettyPrint(){
 			def rowIter := 1;
 			while:{rowIter <= board.length()} do: {
@@ -80,7 +92,21 @@ object:{
 				rowIter := rowIter + 1;
 			};
 		};
+		// Iterates over the board, applying the clojure on each cell (event if that cell is empty)
+		def each(clojure) {
+			def rowIter := 1;
+			while: {rowIter <= getColLength()} do:{
+				def colIter := 1;
+				while: {colIter <= getRowLength()} do: {
+					def cell := board.at(rowIter, colIter);
+					clojure(cell);
+					colIter := colIter + 1;			
+				};				
+				rowIter := rowIter + 1;
+			};
+		};
 	};
+	// Merge two playBoards
 	// Conflict? -> the oldest cell stays alive
 	// Returns: [merged playboard, cells deleted pb1, cells deleted pb2]
 	def merge(pb1, pb2, compareOlder := true){
@@ -90,12 +116,13 @@ object:{
 				def res := playBoard.new(pb1.getColLength(), pb1.getRowLength());// resultboard to return
 				def cellsRemoved1 := [];// cells removed from pb1
 				def cellsRemoved2 := [];
-				def rowIter := 1;// Iterates over rows
+				def rowIter := 1;	// Iterates over rows
 				while: {rowIter <= pb1.getColLength()} do: {
 					def currRow1 := pb1.board.at(rowIter);
 					def currRow2 := pb2.board.at(rowIter);
-					def colIter := 1;
+					def colIter := 1;	// Iterates over columns
 					while: {colIter <= pb1.getRowLength()} do: {
+						// Get cells from pb1 and pb2 at the same position
 						def cell1 := currRow1.at(colIter);
 						def cell2 := currRow2.at(colIter);
 						
@@ -106,9 +133,9 @@ object:{
 						else: {
 							if:(cell2 == -1) then:{res.placeCell(cell1, rowIter, colIter);}// cell1 exist, cell2 not
 							else:{
-								// both cells exist
+								// both cells exist								
+								if: (compareOlder) then: {	// Older cell survives
 								// Cell1 older (or equally old) than cell2 -> cell1 survives
-								if: (compareOlder) then: {
 									if: (cell1.olderThan(cell2)) then: {
 										res.placeCell(cell1, rowIter, colIter);
 										cellsRemoved2 := cellsRemoved2 + [cell2];
@@ -118,8 +145,9 @@ object:{
 										cellsRemoved1 := cellsRemoved1 + [cell1];
 									};
 								}
-								// Design flaw: giving a "cellcompare" function as argument to merge would be better
-								else: {
+								// Optimization: giving a "cellcompare" function as argument to merge would be better
+								else: {	// Younger cell survives
+									// Cell 1 younger than cell2 -> cell1 survives
 									if: (cell1.youngerThan(cell2)) then: {
 										res.placeCell(cell1, rowIter, colIter);
 										cellsRemoved2 := cellsRemoved2 + [cell2];
@@ -144,6 +172,7 @@ object:{
 	};
 	
 	// Computes the next generation of a playboard
+	// Rules are defined in the assignment
 	def computeNextGen(pb) {
 		let: { |rows := pb.getColLength(),
 			cols := pb.getRowLength()|
@@ -185,13 +214,15 @@ object:{
 			def getLiveNeighBours(row, col){
 				getNeighBours(row, col).filter:{|cell| cell != -1};
 			};
-			
+			// result playboar to be returned at the end of the computation
 			def resPB := playBoard.new(pb.getColLength(), pb.getRowLength());
 			def rowIter := 1;
+			// Iterate over cells
 			while: {rowIter <= pb.getColLength()} do: {
 				def colIter := 1;
 				while: {colIter <= pb.getRowLength()} do: {
 					def currCell := pb.getCell(rowIter, colIter);
+					// Get the neighbours of the current cell
 					def liveNeighBours := getLiveNeighBours(rowIter, colIter);
 					def noOfLiveNeighBours := liveNeighBours.length();
 					
@@ -205,7 +236,7 @@ object:{
 							};
 					}
 					else: {// currCell is dead
-						if:(noOfLiveNeighBours == 3) then: {// Dead cell comes alive
+						if:(noOfLiveNeighBours == 3) then: {	// Dead cell comes alive
 							def newCell;
 							// Detecting majority
 							def plyrs := [];
@@ -238,8 +269,8 @@ object:{
 	};
 	// TEST
 	/*def c1 := cell.new("you");
-def pb1 := playBoard.new(3,3);
-def pb2 := playBoard.new(3,3);
+def pb1 := playBoard.new(3,4);
+def pb2 := playBoard.new(3,4);
 def c2 := cell.new("me");
 def c3 := cell.new("brr");
 pb1.placeCell(c1, 2,2);

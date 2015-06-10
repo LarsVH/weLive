@@ -5,8 +5,21 @@ object:{
 			parent := prnt;
 		};
 		
+		def getID(){
+			parent.ID;
+		};
+		
 		def setID(newID) {
 			parent.ID := newID;
+		};
+		
+		def computeScore(){
+			def score := 0;
+			parent.board.each({|cell|
+				if: ((cell != -1).and:{cell.owner == parent.ID}) then: {
+					score := score + 1;
+				};
+			});
 		};
 	};
 };

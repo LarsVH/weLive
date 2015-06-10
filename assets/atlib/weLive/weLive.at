@@ -8,22 +8,26 @@ import ~.misc;
 import /.at.lang.futures exclude seconds,minutes,millisec;
 import /.at.support.timer;
 
-//DIRTY CONSTANTS
+// CONSTANTS
 def rows := 6;
 def cols := 4;
 def playerDetectionTime := seconds(5);
 def playerReconnectDetectionTime := seconds(1);
 def sessionDurationMillis := seconds(5);
-def sessionResumeMillis := seconds(10);
 def leaderMarginTime := seconds(2);
+def cellBankInit := 20;
+def cellBankTreshold := 10;
+def cellBankNewCells := 5;
 
 deftype Player;
-//deftype Board;
+
 
 def makeWeLive(){
 	object:{
+		// Java connection
+		def gui;	
 		// Id of this player
-		def ID := /.at.support.util.randomNumberBetween(0, 125); // TODO {IMEI, etc}
+		def ID := /.at.support.util.randomNumberBetween(0, 125);
 		// Current Leader
 		def leader := nil;
 		// Current Status
@@ -40,6 +44,8 @@ def makeWeLive(){
 		
 		// Local playBoard
 		def startBoard; // := playBoard.new(rows, cols);
+		// Cellbank
+		def cellBank := cellBankInit;
 
 		// Local and remote interfaces
 		def local := weLiveLocalInterface.new(self);
@@ -65,7 +71,7 @@ def makeWeLive(){
 						when: statusRequests becomes: { |statusses|
 							system.println("INFO -- Statusrequests: " + statusRequests);
 							def currpos := 1;
-							if: (leader != nil) then: {leaderFound := true;}; // FIXME: dirty hack to prevent not detecting to be a leader yourself
+							if: (leader != nil) then: {leaderFound := true;}; // Prevent not detecting to be a leader yourself
 							def nonInitFound := false;
 							{|Q|
 								// Check if a leader already exists
@@ -105,7 +111,6 @@ def makeWeLive(){
 														else: {
 															system.println("WARNING -- Leader (" + leaderID + ") not yet discovered");
 														};
-														// XXX: intussen waarschijnlijk wel al gevonden <<<<<<<<<<<<<<<
 														};
 												};
 											}
@@ -186,8 +191,7 @@ def makeWeLive(){
 			def onSelfOffline(){
 				system.println("INFO -- We (" + ID + ") are offline ");
 				leader := nil;// invalidate leader
-				status := "offline";
-			
+				status := "offline";			
 			};
 			
 			def playerReconnected(plyrID, plyrRef) {
@@ -197,16 +201,16 @@ def makeWeLive(){
 					system.println("INFO -- We (" + ID + ") are back online");
 					onSelfOnline();
 				};
-				
-				// TODO: neem de speler weer op in het spel
 				// GUI: reactivate cells
 				};
 			def onSelfOnline() {
 				status := "init";
 				detectOtherPlayers(seconds(0));
-				//detectOtherPlayers(playerReconnectDetectionTime);// TO CHECK
 				};
 		};
+		
+		gui := Android.parent.registerATApp(local);
+		
 		goOnline();
 		
 		// Helpfunctions for onNewLeader()
@@ -221,28 +225,17 @@ def makeWeLive(){
 				plyr<-startSession(currSession)@OneWay;});
 			remote.startSession(currSession);// starting ourselves
 			};
-		// DEPRECATED
-		def continueGame(stBoardn, players){ // When a leader has failed
-			system.println("INFO -- (Leader) Continuing game");
-			def endTime := now() + sessionResumeMillis;
-			currSession := session.new(currSession.ID, stBoard, players, endTime);
-			players.map({|plyr|
-				plyr<-resumeSession(currSession)@OneWay;});
-			remote.resumeSession(currSession);// resuming ourselves
-			};
-		
-		
+			
 		// New leader
 		//---------------------------------------
 		def onNewLeader(newLeaderID){
-			leader := newLeaderID;// !! Laat dit staan (enkel voor de leader dubbel)
-			system.println("DEBUG -- onNewLeader. MyID:" + ID + "; leaderID: " + newLeaderID);
+			leader := newLeaderID;
+			system.println("INFO -- onNewLeader. MyID:" + ID + "; leaderID: " + newLeaderID);
 			
 			// We are new Leader
 			if: (leader == ID) then: {
 				// We are new leader
-				// Get all existing sesssionPlayers (< ken je nog niet als je net leader wordt);
-
+				// Get all existing sesssionPlayers 
 				// Go through all onlineplayers and request their session objects
 				// Get the one with the highest sessionID
 				// deepCopy its' players into sessionPlayers (if exist in onlinePlayers)
@@ -259,11 +252,6 @@ def makeWeLive(){
 					 };
 					def hsPlayers := highestSession.players;// hsPlayers == higest session players (iterMap)
 
-					// TODO: check of de sessie al op zijn einde is (vergelijk op basis EndSessionTime)
-					// SOLUTION: normaal gezien zou alles moeten werken aangezien elke actor op zichzelf sessionOver oproept (en dan test of hij al
-					// dan niet (nog) leider kan zijn
-					// AAN HET EINDE VAN ELKE SESSIE WORDT AUTOMATISCH AL GEVERIFIEERD OF ER GEEN NIEUWE LEIDER MOET ZIJN
-
 					// We have been elected to be leader at the end of a 'normal' session
 					if:(hsPlayers.length() > 0) then: {
 						sessionPlayers := iterMap.new(); // make sure sessionPlayers is empty
@@ -274,8 +262,6 @@ def makeWeLive(){
 							else: {system.println("WARNING -- newLeader -- a sessionuser went offline");};
 							kv;});
 						
-						// XXX: moet nog steeds worden opgeroepen: session over lanceert een peer election 
-						// hierdoor wordt deze functie (onNewLeader) opgeroepen) -> sessie moet nog altijd worden afgehandeld
 						sessionOver(highestSession);
 					}
 					else: {
@@ -295,12 +281,19 @@ def makeWeLive(){
 		};
 		
 		// End-of-Session callback
+		//---------------------------------------
 		def sessionOver(session){
 			if: (status == "offline") then: {
 				system.println("INFO -- End of Session -- We are offline -- Waiting for reconnection");
 			}
 			else: {
 				status := "endOfSession";
+				
+				// check if new cells are needed
+				if:(cellBank <= cellBankTreshold) then: {
+					cellBank := cellBank + cellBankNewCells;
+				};
+				
 				def highestID := ID;// start with yourself (in case the leader went offline)
 				onlinePlayers.mapkv({|kv|
 					if:(IDsmaller(highestID, kv.at(1))) then: {highestID := kv.at(1);};
@@ -310,9 +303,8 @@ def makeWeLive(){
 					kv;});
 				if: (highestID != leader) then: {// leader cannot longer be leader
 					sessionPlayers := iterMap.new();
-					//broadcastRequestPeerElection(self, leader);
 					system.println("DEBUG -- oldLeader (" + leader + ") cannot longer be leader: higherID (" + highestID + ") detected");
-					remote.requestPeerElection(leader);//OK: enkel lokaal peer electen (aangezien alle actors dit doen -> geen nood om extra bericht rond te sturen)
+					remote.requestPeerElection(leader);// Only local peer electen (all actors do this -> no need to broadcast peerelection request)
 					} 
 				else: {
 					if: (leader == ID) then: {
@@ -345,14 +337,9 @@ def makeWeLive(){
 								sessionPlayers.map({|plyr| plyr<-startSession(nextSession)@OneWay;});
 								remote.startSession(nextSession);
 							};
-							// merge playboards
-							// include joiners
-							// make new session object (id + 1)
-							// start new session
-
 						};
 					}
-					// Leaderwill retrieve our sessionobject
+					// Leader will retrieve our sessionobject
 					// Wait for next session to start
 					else:{// GUI: wait for next session
 						joinPlayers := iterMap.new();// clear all joiners for this session
@@ -362,8 +349,9 @@ def makeWeLive(){
 		};
 	};
 };
-// 
-def broadcastRequestPeerElection(game, oldLeader, oldLeaderOffline := false){
+// Broadcasting peer election requests
+//------------------------------------
+def broadcastRequestPeerElection(game, oldLeader){
 	// Helpfunction
 	def doBroadcast(){
 		game.onlinePlayers.map({|plyr|
@@ -375,23 +363,8 @@ def broadcastRequestPeerElection(game, oldLeader, oldLeaderOffline := false){
 		doBroadcast();
 	}
 	else: {
-		// XXX: DEPRECATED: IF case does not occur anymore (we only do local peerElection)
-		if: (oldLeaderOffline) then: {// Leader went offline -> new leader needed
-			// check if a new leader has been elected yet (in the meantime)
-			// dirty hack to improve performance
-			def waittm := millisec(/.at.support.util.randomNumberBetween(0, 1000));
-			when: waittm elapsed: {
-				if:(game.leader == oldLeader) then: {
-					// Still no new leader chosen -> send requests;
-					doBroadcast();
-				};
-				else: {}; // A new leader has already been chosen, ignore
-				};
-		}
-		else: {
-			system.println("WARNING-- Can't request peer election if self != leader");
+		system.println("WARNING-- Can't request peer election if self != leader");
 		};
-	};
 };
 
 def joinRequest(myID, leaderRef, session) {

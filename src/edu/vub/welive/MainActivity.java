@@ -19,7 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements JWeLive {
 	private GridView 	grid;
 	private IAT 		iat;
 	private Handler 	mHandler;
@@ -80,6 +80,8 @@ public class MainActivity extends ActionBarActivity {
 
     }
     
+    private static ATWeLive atwl;
+    
 	// Call the AmbientTalk methods in a separate thread to avoid blocking the UI.
 	private class LooperThread extends Thread {
 
@@ -87,13 +89,21 @@ public class MainActivity extends ActionBarActivity {
 			public void handleMessage(Message msg) {
 				switch (msg.what) {
 				}
-
+				
 			}
 		};
+		
 
 		public void run() {
 			Looper.prepare();
 			Looper.loop();
 		}
+	}
+
+	@Override
+	public JWeLive registerATApp(ATWeLive weLive) {
+		Log.d("AmbientTalk", "registerATApp called");
+		atwl = weLive;
+		return this;	// --> we have to implement all methods AT can call in this class
 	}
 }
