@@ -17,6 +17,8 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 
 
 public class MainActivity extends ActionBarActivity implements JWeLive {
@@ -32,9 +34,12 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ViewGroup rootView = (ViewGroup) findViewById(R.id.rootlayout);        
         grid = new GridView(getApplicationContext(),10,10);
         grid.setBackgroundColor(Color.WHITE);
-        setContentView(grid);
+        rootView.addView(grid);
+        //setContentView(grid);
+        
         //Copy AmbientTalk files to the SD card
         Intent i = new Intent(this, weLiveAssetInstaller.class);
     	startActivityForResult(i,0);
