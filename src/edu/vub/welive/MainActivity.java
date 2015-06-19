@@ -23,6 +23,10 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	private GridView 	grid;
 	private IAT 		iat;
 	private Handler 	mHandler;
+	private String TAG = "WLJava";
+	
+	//Message code send to looper thread
+	private final int _MSG_TEST_ = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +92,13 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 		public Handler mHandler = new Handler() {
 			public void handleMessage(Message msg) {
 				switch (msg.what) {
+					case _MSG_TEST_:{
+						String arg = (String) msg.obj;
+						Log.d(TAG, "mHandler -- calling callAT");
+						atwl.callAT(arg);
+						break;
+					}
+				
 				}
 				
 			}
@@ -102,8 +113,17 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 
 	@Override
 	public JWeLive registerATApp(ATWeLive weLive) {
-		Log.d("AmbientTalk", "registerATApp called");
+		Log.d(TAG, "registerATApp called");
 		atwl = weLive;
+		// XXX Testing Java <-> AT connection
+		mHandler.sendMessage(Message.obtain(mHandler,_MSG_TEST_, "TestArgument"));
 		return this;	// --> we have to implement all methods AT can call in this class
+	}
+
+
+	@Override
+	public JWeLive callJava(String arg) {
+		Log.d(TAG, "received callJava -- Argument: " + arg);
+		return null;
 	}
 }

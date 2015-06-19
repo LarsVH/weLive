@@ -21,5 +21,12 @@ object:{
 				};
 			});
 		};
+		
+		def callAT(arg){
+			system.println("WLAT -- received callAT -- Argument: " + arg);
+			system.println("WLAT -- calling callJava(hehe)");
+			parent.gui.callJava("hehe");
+			
+		};
 	};
 };

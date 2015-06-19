@@ -5,7 +5,11 @@ package edu.vub.welive;
  */
 
 public interface JWeLive {
-
 	
 	public JWeLive registerATApp(ATWeLive weLive);
+	
+	
+	// XXX: Test
+	public JWeLive callJava(String arg);
+	
 }
