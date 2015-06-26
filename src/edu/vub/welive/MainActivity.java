@@ -19,6 +19,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RelativeLayout;
 
 
 public class MainActivity extends ActionBarActivity implements JWeLive {
@@ -35,11 +37,36 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ViewGroup rootView = (ViewGroup) findViewById(R.id.rootlayout);        
+        
+        // GRID
         grid = new GridView(getApplicationContext(),10,10);
         grid.setBackgroundColor(Color.WHITE);
-        rootView.addView(grid);
+        RelativeLayout.LayoutParams gridParams =
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        //gridParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        //gridParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        //gridParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        gridParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+        //gridParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        //gridParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        
+        
+        rootView.addView(grid, gridParams);
         //setContentView(grid);
         
+        // DISCONNECT BUTTON
+        Button disconnectButton = new Button(getApplicationContext());
+        RelativeLayout.LayoutParams disconnectButtonParams =
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        disconnectButtonParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        disconnectButtonParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        disconnectButtonParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        disconnectButtonParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        //Button disconnectButton = (Button) rootView.findViewById(R.id.disconnect);
+        disconnectButton.setText("TestButton");
+        rootView.addView(disconnectButton, disconnectButtonParams);
+        
+        //---------------------------------------------------------
         //Copy AmbientTalk files to the SD card
         Intent i = new Intent(this, weLiveAssetInstaller.class);
     	startActivityForResult(i,0);

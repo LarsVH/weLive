@@ -345,7 +345,9 @@ int string abc_shareactionprovider_share_with 0x7f0b000c
 int string abc_shareactionprovider_share_with_application 0x7f0b000b
 int string action_settings 0x7f0b000f
 int string app_name 0x7f0b000d
+int string disconnect 0x7f0b0011
 int string hello_world 0x7f0b000e
+int string livegrid 0x7f0b0012
 int string rootlayout 0x7f0b0010
 int style AppBaseTheme 0x7f0c008b
 int style AppTheme 0x7f0c008c
