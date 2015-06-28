@@ -76,6 +76,7 @@ object:{
 			system.println("INFO -- INBOUND -- StartSession, sessionID:" + session.ID);
 			parent.status := "inSession";
 			parent.currSession := session;
+			
 			// TODO: GUI: StartSession	(session) <- moves moeten op spelbord van session object worden gedaan
 			// currSession <- aanpassen bij elke move
 			
@@ -90,9 +91,6 @@ object:{
 		};
 		def resumeSession(session){
 			// DEPRECATED
-		};
-		def addCells(noOfCells){
-			// TODO: add noOfCells to Cellbank
 		};
 	};
 };

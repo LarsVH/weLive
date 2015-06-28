@@ -1,3 +1,4 @@
+import ~.playBoard;
 object:{
 	def weLiveLocalInterface := object: {
 		def parent;
@@ -15,18 +16,27 @@ object:{
 		
 		def computeScore(){
 			def score := 0;
-			parent.board.each({|cell|
+			parent.currSession.board.each({|cell|
 				if: ((cell != -1).and:{cell.owner == parent.ID}) then: {
 					score := score + 1;
 				};
 			});
 		};
-		
 		def callAT(arg){
 			system.println("WLAT -- received callAT -- Argument: " + arg);
 			system.println("WLAT -- calling callJava(hehe)");
-			parent.gui.callJava("hehe");
-			
+			parent.gui.callJava("hehe");			
+		};
+		// Player touched a cell in the GUI
+		def touchedCell(row,col){
+			if: (parent.status == "inSession") then:{
+				if: ((parent.cellBank > 0).and:{parent.currSession.board.getCell() != -1}) then: {
+					def currCell := cell.new(parent.ID);
+					parent.currSession.board.placeCell(currCell, row, col);
+				}
+				else: {parent.gui.displayLog("cellBank empty")};
+			}
+			else: {parent.gui.displayLog("Not in a session -- please wait");};
 		};
 	};
 };

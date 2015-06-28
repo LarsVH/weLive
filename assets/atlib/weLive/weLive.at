@@ -9,15 +9,15 @@ import /.at.lang.futures exclude seconds,minutes,millisec;
 import /.at.support.timer;
 
 // CONSTANTS
-def rows := 6;
-def cols := 4;
+def rows := 10;
+def cols := 10;
 def playerDetectionTime := seconds(5);
 def playerReconnectDetectionTime := seconds(1);
 def sessionDurationMillis := seconds(5);
 def leaderMarginTime := seconds(2);
-def cellBankInit := 20;
-def cellBankTreshold := 10;
-def cellBankNewCells := 5;
+def cellBankInit := 10;
+def cellBankTreshold := 5;
+def cellBankNewCells := 3;
 
 deftype Player;
 
@@ -31,7 +31,7 @@ def makeWeLive(){
 		// Current Leader
 		def leader := nil;
 		// Current Status
-		def status := "init"; // {init, joining, inSession, inSessionPlay,...}
+		def status := "init"; // {init, joining, inSession,...}
 
 		// All players discovered so far
 		def players := iterMap.new();
