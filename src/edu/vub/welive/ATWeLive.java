@@ -6,5 +6,7 @@ package edu.vub.welive;
 public interface ATWeLive {
 	
 	public void callAT(String arg);
+	
+	public void switchOnlineOffline();	// TODO in AT
 
 }

@@ -21,6 +21,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity implements JWeLive {
@@ -28,6 +30,8 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	private IAT 		iat;
 	private Handler 	mHandler;
 	private String TAG = "WLJava";
+	
+	private TextView atLogs;
 	
 	//Message code send to looper thread
 	private final int _MSG_TEST_ = 0;
@@ -54,6 +58,45 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
         rootView.addView(grid, gridParams);
         //setContentView(grid);
         
+        // LOGVIEW
+        ScrollView atLogsScroll = new ScrollView(getApplicationContext());
+        RelativeLayout.LayoutParams atLogsScrollParams =
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        atLogsScrollParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        atLogsScrollParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        atLogsScrollParams.addRule(ScrollView.SCROLLBAR_POSITION_DEFAULT);
+        atLogsScrollParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        atLogsScrollParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        
+        atLogs = new TextView(getApplicationContext());
+        RelativeLayout.LayoutParams atLogsParams =
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        atLogsParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        atLogsParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        atLogsParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        atLogsParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+       
+        
+       // atLogsScroll.addView(atLogs, atLogsParams);
+        
+        rootView.addView(atLogs, atLogsParams);
+        
+        //debug
+        	atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
+            atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
+            atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
+            atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
+            atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
+            atLogs.append("hehe\n");
+            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());       
+        
+        
+        
         // DISCONNECT BUTTON
         Button disconnectButton = new Button(getApplicationContext());
         RelativeLayout.LayoutParams disconnectButtonParams =
@@ -63,7 +106,7 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
         disconnectButtonParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
         disconnectButtonParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
         //Button disconnectButton = (Button) rootView.findViewById(R.id.disconnect);
-        disconnectButton.setText("TestButton");
+        disconnectButton.setText("Disconnect");
         rootView.addView(disconnectButton, disconnectButtonParams);
         
         //---------------------------------------------------------
@@ -157,5 +200,23 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	public JWeLive callJava(String arg) {
 		Log.d(TAG, "received callJava -- Argument: " + arg);
 		return null;
+	}
+	@Override
+	public void fillCell(int row, int col, int ID) {
+		grid.fillCell(row, col, ID);		
+	}
+	@Override
+	public void clearCell(int row, int col) {
+		grid.clearCell(row, col);		
+	}
+	@Override
+	public void greyCell(int row, int col) {
+		grid.greyCell(row, col);		
+	}
+
+	@Override
+	public void displayLog(String log) {
+		atLogs.append(log);
+		
 	}
 }
