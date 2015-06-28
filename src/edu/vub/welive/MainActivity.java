@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -32,9 +33,12 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	private String TAG = "WLJava";
 	
 	private TextView atLogs;
+	private String previousLog = new String("");
 	
 	//Message code send to looper thread
 	private final int _MSG_TEST_ = 0;
+	private final int _MSG_TOUCH_ = 1;
+	private final int _MSG_ONOFF_ = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,73 +46,60 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
         setContentView(R.layout.activity_main);
         ViewGroup rootView = (ViewGroup) findViewById(R.id.rootlayout);        
         
+        // DISCONNECT BUTTON
+        Button disconnectButton = new Button(getApplicationContext());
+        disconnectButton.setId(44);
+        RelativeLayout.LayoutParams disconnectButtonParams =
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        disconnectButtonParams.addRule(RelativeLayout.ALIGN_TOP, RelativeLayout.TRUE);
+        disconnectButtonParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        disconnectButtonParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        //Button disconnectButton = (Button) rootView.findViewById(R.id.disconnect);
+        disconnectButton.setText("(Dis)connect");
+        rootView.addView(disconnectButton, disconnectButtonParams);
+        
+        
         // GRID
-        grid = new GridView(getApplicationContext(),10,10);
+        grid = new GridView(getApplicationContext(), mHandler,10,10);
+        grid.setId(55);
         grid.setBackgroundColor(Color.WHITE);
         RelativeLayout.LayoutParams gridParams =
         		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         //gridParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
         //gridParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-        //gridParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-        gridParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
-        //gridParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
-        //gridParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        gridParams.addRule(RelativeLayout.BELOW, disconnectButton.getId());
         
+        //gridParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
         
+        gridParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        gridParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        
+        //rootView.addView(grid);
         rootView.addView(grid, gridParams);
         //setContentView(grid);
         
         // LOGVIEW
-        ScrollView atLogsScroll = new ScrollView(getApplicationContext());
+        /*ScrollView atLogsScroll = new ScrollView(getApplicationContext());
+        atLogsScroll.setId(66);
         RelativeLayout.LayoutParams atLogsScrollParams =
         		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams scrollParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,0,1);
+        atLogsScroll.setLayoutParams(scrollParams);
         atLogsScrollParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
         atLogsScrollParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-        atLogsScrollParams.addRule(ScrollView.SCROLLBAR_POSITION_DEFAULT);
-        atLogsScrollParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-        atLogsScrollParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-        
+       // atLogsScrollParams.addRule(ScrollView.SCROLLBAR_POSITION_DEFAULT);
+        atLogsScrollParams.addRule(RelativeLayout.ALIGN_BOTTOM, grid.getId());
+        */
         atLogs = new TextView(getApplicationContext());
         RelativeLayout.LayoutParams atLogsParams =
-        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        atLogsParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-        atLogsParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);       
         atLogsParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
         atLogsParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-       
-        
-       // atLogsScroll.addView(atLogs, atLogsParams);
+        atLogsParams.addRule(RelativeLayout.ALIGN_BOTTOM, grid.getId());
+        //atLogsScroll.addView(atLogs, atLogsParams);
         
         rootView.addView(atLogs, atLogsParams);
-        
-        //debug
-        	atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
-            atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
-            atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
-            atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
-            atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());
-            atLogs.append("hehe\n");
-            atLogsScroll.smoothScrollBy(0, atLogs.getBottom());       
-        
-        
-        
-        // DISCONNECT BUTTON
-        Button disconnectButton = new Button(getApplicationContext());
-        RelativeLayout.LayoutParams disconnectButtonParams =
-        		new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        disconnectButtonParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-        disconnectButtonParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-        disconnectButtonParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
-        disconnectButtonParams.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-        //Button disconnectButton = (Button) rootView.findViewById(R.id.disconnect);
-        disconnectButton.setText("Disconnect");
-        rootView.addView(disconnectButton, disconnectButtonParams);
-        
+                
         //---------------------------------------------------------
         //Copy AmbientTalk files to the SD card
         Intent i = new Intent(this, weLiveAssetInstaller.class);
@@ -173,7 +164,13 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 						atwl.callAT(arg);
 						break;
 					}
-				
+					case _MSG_TOUCH_:{
+						int[] rowcol = (int[]) msg.obj;
+						atwl.touchedCell(rowcol[0], rowcol[1]);
+					}
+					case _MSG_ONOFF_:{
+						atwl.switchOnlineOffline();
+					}			
 				}
 				
 			}
@@ -216,7 +213,9 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 
 	@Override
 	public void displayLog(String log) {
-		atLogs.append(log);
-		
+		atLogs.setText("");
+		atLogs.append(log + "\n");
+		atLogs.append(previousLog);		
+		previousLog = log;		
 	}
 }
