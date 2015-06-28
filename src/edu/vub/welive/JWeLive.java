@@ -16,6 +16,6 @@ public interface JWeLive {
 	
 	
 	// XXX: Test
-	public JWeLive callJava(String arg);
+	public void callJava(String arg);
 	
 }

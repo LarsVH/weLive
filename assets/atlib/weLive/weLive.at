@@ -46,6 +46,10 @@ def makeWeLive(){
 		def startBoard; // := playBoard.new(rows, cols);
 		// Cellbank
 		def cellBank := cellBankInit;
+		
+		def screenLog(log){
+			gui.displayLog(log);
+		};
 
 		// Local and remote interfaces
 		def local := weLiveLocalInterface.new(self);
@@ -61,6 +65,8 @@ def makeWeLive(){
 			def leaderFound := false;
 			def detectOtherPlayers(time){
 				system.println("INFO -- Start detecting other players for " + time + "s");
+				screenLog("Welcome");
+				screenLog("Scanning for other players -- please wait");
 				// GUI output: scanning for other Players
 				when: time elapsed: {
 					if: (onlinePlayers.length > 0) then:

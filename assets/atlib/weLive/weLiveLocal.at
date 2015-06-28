@@ -24,19 +24,24 @@ object:{
 		};
 		def callAT(arg){
 			system.println("WLAT -- received callAT -- Argument: " + arg);
-			system.println("WLAT -- calling callJava(hehe)");
+			//system.println("WLAT -- calling callJava(hehe)");
+			//parent.screenLog("blub");
 			parent.gui.callJava("hehe");			
 		};
 		// Player touched a cell in the GUI
-		def touchedCell(row,col){
-			if: (parent.status == "inSession") then:{
-				if: ((parent.cellBank > 0).and:{parent.currSession.board.getCell() != -1}) then: {
-					def currCell := cell.new(parent.ID);
-					parent.currSession.board.placeCell(currCell, row, col);
+		def touchedCell(row, col){
+			system.println("WLAT -- received touchedCell: row = " + row + " col = " + col);
+				if: (parent.status == "inSession") then: {
+					system.println("WLAT -- touchedCell -- we are inSession");					
 				}
-				else: {parent.gui.displayLog("cellBank empty")};
-			}
-			else: {parent.gui.displayLog("Not in a session -- please wait");};
+				else: {
+					system.println("WLAT -- touchedCell -- we are not inSession");
+					parent.screenLog("Not in a session -- please wait");
+					};		
+		};
+		
+		def switchOnlineOffline(){
+			// TODO
 		};
 	};
 };

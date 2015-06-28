@@ -76,14 +76,11 @@ object:{
 			system.println("INFO -- INBOUND -- StartSession, sessionID:" + session.ID);
 			parent.status := "inSession";
 			parent.currSession := session;
-			
-			// TODO: GUI: StartSession	(session) <- moves moeten op spelbord van session object worden gedaan
-			// currSession <- aanpassen bij elke move
-			
+			parent.gui.displayLog("Starting new session: " + currSession.ID);			
 			
 			def duration := (session.endTime - now());
 			when: duration elapsed: {
-			// TODO: GUI: StopSession (geen moves meer toegelaten)
+			parent.gui.displayLog("End of session: " + currSession.ID);
 			system.println("INFO -- Session over");
 			parent.sessionOver(session);
 			};

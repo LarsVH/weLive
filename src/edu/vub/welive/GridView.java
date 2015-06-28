@@ -9,7 +9,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Message;
@@ -22,9 +21,7 @@ public class GridView extends View {
 
 	private Context mContext;
 	private Canvas mCanvas;
-	private Handler mHandler;
-	private final int _MSG_TOUCH_ = 1;
-	private final int _MSG_ONOFF_ = 2;
+	private MainActivity wLive;
 	private int defaultColor;
 	private Paint mPaint;
 	private int mHeight;
@@ -36,10 +33,10 @@ public class GridView extends View {
 	private Hashtable<Integer,Integer> colorTable;	// key = userID, value = color
 
 
-	public GridView(Context mContext, Handler mHandler, int height,int width){
+	public GridView(Context mContext, MainActivity wLive, int height,int width){
 		super(mContext);
 		this.mContext 	= mContext;
-		this.mHandler	= mHandler;
+		this.wLive		= wLive;
 		defaultColor 	= Color.BLACK;		
 		mPaint 			= new Paint();
 		mHeight			= height;
@@ -64,6 +61,9 @@ public class GridView extends View {
 
 		colorTable = new Hashtable<Integer,Integer>();
 
+	}
+	private Handler getFPHandler(){
+		return wLive.mHandler;
 	}
 
 	public class JCell {
@@ -97,10 +97,13 @@ public class GridView extends View {
 		case MotionEvent.ACTION_DOWN:
 			Log.d(TAG, "GridView -- onTouch: x=" + x + " - y=" + y);
 			int[] co = getCellRowCol((int)x,(int)y);
-			mHandler.sendMessage(Message.obtain(mHandler,_MSG_TOUCH_, co));
-			//TODO create a callback to AT: callAT(co[0],co[1])
-			
-			/* if(co != null && cells[co[0]][co[1]].color == defaultColor){
+			if(co != null){
+				// Convert to AT rows/columns
+				co[0] = co[0] + 1;
+				co[1] = co[1] + 1;
+				getFPHandler().sendMessage(Message.obtain(getFPHandler(), wLive._MSG_TOUCH_, co));
+			}
+			/*if(co != null && cells[co[0]][co[1]].color == defaultColor){
 				Random rand = new Random();
 				fillCell(co[0], co[1], rand.nextInt(20));					
 			}
@@ -110,8 +113,8 @@ public class GridView extends View {
 				}
 				else if(co != null && cells[co[0]][co[1]].color != defaultColor && cells[co[0]][co[1]].greyed){
 					unGreyCell(co[0], co[1]);
-				}
-				*/
+				}*/
+
 			invalidate();
 			break;	        
 		}
@@ -175,7 +178,7 @@ public class GridView extends View {
 		result[3] = bottom;
 		return result;
 	}
-	
+
 	// Generate a random color
 	public int generateColor(){
 		Random rand = new Random();		
@@ -188,7 +191,7 @@ public class GridView extends View {
 		else
 			return generateColor();
 	};
-	
+
 	public void fillCell(int row, int col, int ID) {
 		int color;		
 		if(colorTable.containsKey(ID))
@@ -206,16 +209,16 @@ public class GridView extends View {
 		cells[row][col].color = defaultColor;
 		draw(mCanvas);		
 	}
-	
+
 	public void greyCell(int row, int col) {
 		int currentColor = cells[row][col].color;
 		clearCell(row, col);
-		
+
 		cells[row][col].color = currentColor;
 		cells[row][col].greyed = true;
 		draw(mCanvas);
 	}
-	
+
 	public void unGreyCell(int row, int col){
 		cells[row][col].greyed = false;		
 		draw(mCanvas);
