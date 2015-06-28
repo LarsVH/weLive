@@ -33,9 +33,10 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	private String previousLog = new String("");
 
 	//Message code send to looper thread
-	public final int _MSG_TEST_ = 0;
-	public final int _MSG_TOUCH_ = 1;
-	public final int _MSG_ONOFF_ = 2;
+	public final int _MSG_TEST_ 	= 0;
+	public final int _MSG_TOUCH_ 	= 1;
+	public final int _MSG_ONOFF_ 	= 2;
+	public final int _LOC_LOG_		= 3;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +89,7 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
         atLogsScrollParams.addRule(RelativeLayout.ALIGN_BOTTOM, grid.getId());
 		 */
 		atLogs = new TextView(getApplicationContext());
+		atLogs.setId(77);
 		RelativeLayout.LayoutParams atLogsParams =
 				new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);       
 		atLogsParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
@@ -155,36 +157,41 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 		public Handler mHandler = new Handler() {
 			public void handleMessage(Message msg) {
 				if(null == atwl)
-						return;
+					return;
 				switch (msg.what) {
-				case _MSG_TEST_:{
-					String arg = (String) msg.obj;
-					Log.d(TAG, "mHandler -- calling callAT");
-					atwl.callAT(arg);
-					break;
-				}
-				case _MSG_TOUCH_:{
-					int[] rowcol = (int[]) msg.obj;
-					Log.d(TAG, "MGG_TOUCH -- row = " + rowcol[0] + " , col = " + rowcol[1]);
-					//atwl.touchedCell(rowcol[0], rowcol[1]);
-					atwl.callAT("zottterdezot");
-					break;
-				}
-				case _MSG_ONOFF_:{
-					//atwl.switchOnlineOffline();
-					break;
-				}			
+					case _MSG_TEST_:{
+						String arg = (String) msg.obj;
+						Log.d(TAG, "mHandler -- calling callAT");
+						atwl.callAT(arg);
+						break;
+					}
+					case _MSG_TOUCH_:{
+						int[] rowcol = (int[]) msg.obj;
+						Log.d(TAG, "MGG_TOUCH -- row = " + rowcol[0] + " , col = " + rowcol[1]);
+						atwl.touchedCell(rowcol[0], rowcol[1]);
+						//atwl.callAT("zottterdezot");
+						break;
+					}
+					case _MSG_ONOFF_:{
+						//atwl.switchOnlineOffline();
+						break;
+					}
+					case _LOC_LOG_:{
+						String txt = (String) msg.obj;
+						atLogs.setText(txt);
+						break;
+					}
 				}
 
 			}
 		};
-
 
 		public void run() {
 			Looper.prepare();
 			Looper.loop();
 		}
 	}
+
 
 	@Override
 	public JWeLive registerATApp(ATWeLive weLive) {
@@ -211,9 +218,14 @@ public class MainActivity extends ActionBarActivity implements JWeLive {
 	public void greyCell(int row, int col) {
 		grid.greyCell(row, col);		
 	}
-
 	@Override
 	public void displayLog(String log) {
+		Log.d(TAG, "DisplayLog in");
+		Log.d(TAG, "Log:" + log);
+		
+		//TextView atl = (TextView) findViewById(77);
+		//mHandler.handleMessage(Message.obtain(mHandler,_LOC_LOG_, log));
+		//atLogs.append("hihi");
 		atLogs.setText("");
 		atLogs.append(log + "\n");
 		atLogs.append(previousLog);		

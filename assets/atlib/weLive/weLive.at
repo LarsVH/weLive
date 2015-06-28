@@ -47,9 +47,9 @@ def makeWeLive(){
 		// Cellbank
 		def cellBank := cellBankInit;
 		
-		def screenLog(log){
-			gui.displayLog(log);
-		};
+		//def screenLog(log){
+		//	gui.displayLog(log);
+		//};
 
 		// Local and remote interfaces
 		def local := weLiveLocalInterface.new(self);
@@ -65,9 +65,9 @@ def makeWeLive(){
 			def leaderFound := false;
 			def detectOtherPlayers(time){
 				system.println("INFO -- Start detecting other players for " + time + "s");
-				screenLog("Welcome");
-				screenLog("Scanning for other players -- please wait");
-				// GUI output: scanning for other Players
+				//screenLog("Welcome");
+				//screenLog("Scanning for other players -- please wait");
+				//screenLog("MyID = " + ID);
 				when: time elapsed: {
 					if: (onlinePlayers.length > 0) then:
 					{// Get statusses of other players
@@ -215,9 +215,10 @@ def makeWeLive(){
 				};
 		};
 		
-		gui := Android.parent.registerATApp(local);
+		//gui := Android.parent.registerATApp(local);
 		
 		goOnline();
+
 		
 		// Helpfunctions for onNewLeader()
 		//---------------------------------------

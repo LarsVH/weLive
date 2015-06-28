@@ -193,6 +193,9 @@ public class GridView extends View {
 	};
 
 	public void fillCell(int row, int col, int ID) {
+		// convert from AT
+		row = row - 1;
+		col = col - 1;
 		int color;		
 		if(colorTable.containsKey(ID))
 			color = colorTable.get(ID);			
@@ -224,8 +227,6 @@ public class GridView extends View {
 		draw(mCanvas);
 	}
 
-
-	//XXX !!!: communicatie AT -> Java arrays beginnen vanaf 0 (AT vanaf 1!)
 
 	@Override
 	public void onDraw(Canvas mCanvas){

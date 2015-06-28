@@ -9,5 +9,4 @@ public interface ATWeLive {
 	
 	public void touchedCell(int row, int col);
 	//public void switchOnlineOffline();	// TODO in AT
-
 }
