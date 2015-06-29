@@ -13,7 +13,7 @@ def rows := 6;
 def cols := 4;
 def playerDetectionTime := seconds(5);
 def playerReconnectDetectionTime := seconds(1);
-def sessionDurationMillis := seconds(5);
+def sessionDurationMillis := seconds(10);
 def leaderMarginTime := seconds(2);
 def cellBankInit := 20;
 def cellBankTreshold := 10;
@@ -209,7 +209,7 @@ def makeWeLive(){
 				};
 		};
 		
-		gui := Android.parent.registerATApp(local);
+		//gui := Android.parent.registerATApp(local);
 		
 		goOnline();
 		
@@ -374,3 +374,4 @@ def joinRequest(myID, leaderRef, session) {
 network.online();
 def weLiveCore := makeWeLive();
 system.println("weLive started, myId:" + weLiveCore.ID);
+weLiveCore;

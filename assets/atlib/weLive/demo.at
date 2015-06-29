@@ -1,0 +1,16 @@
+import ~.weLive;
+// DEMOCommands
+
+
+//plyr 1
+//-------
+weLiveCore.currSession.board.placeCell(cell.new(weLiveCore.ID),1,2);
+weLiveCore.currSession.board.placeCell(cell.new(weLiveCore.ID),2,2);
+weLiveCore.currSession.board.placeCell(cell.new(weLiveCore.ID),1,3);
+weLiveCore.currSession.board.prettyPrint();
+
+// plyr 2
+//-------
+weLiveCore.currSession.board.placeCell(cell.new(weLiveCore.ID),2,1);
+weLiveCore.currSession.board.placeCell(cell.new(weLiveCore.ID),2,2);
+weLiveCore.currSession.board.prettyPrint();
